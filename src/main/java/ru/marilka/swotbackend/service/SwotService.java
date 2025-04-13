@@ -1,74 +1,70 @@
 package ru.marilka.swotbackend.service;
 
-import lombok.AllArgsConstructor;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
+import ru.marilka.swotbackend.model.SwotSummaryDto;
+import ru.marilka.swotbackend.model.entity.SwotVersionEntity;
+import ru.marilka.swotbackend.repository.SwotSessionRepository;
+import ru.marilka.swotbackend.repository.SwotVersionRepository;
+
+import java.time.Instant;
+import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class SwotService {
-    private double a; // левая нижняя граница
-    private double b; // левая верхняя граница
-    private double c; // правая верхняя граница
-    private double d; // правая нижняя граница
 
-    public TrapezoidalFuzzyNumber(double a, double b, double c, double d) {
-        if (a > b || b > c || c > d) {
-            throw new IllegalArgumentException("Parameters must satisfy a <= b <= c <= d");
+    private final SwotSessionRepository sessionRepository;
+    private final SwotVersionRepository versionRepository;
+    private final ObjectMapper objectMapper;
+
+    public SwotService(SwotSessionRepository sessionRepository, SwotVersionRepository versionRepository, ObjectMapper objectMapper) {
+        this.sessionRepository = sessionRepository;
+        this.versionRepository = versionRepository;
+        this.objectMapper = objectMapper;
+    }
+
+    public SwotSummaryDto buildSummary(Long sessionId) {
+        SwotSessionEntity session = sessionRepository.findById(sessionId).orElseThrow();
+        SwotSummaryDto dto = new SwotSummaryDto();
+        dto.setSessionName(session.getName());
+        return dto;
+    }
+
+    public void saveSummary(Long sessionId, SwotSummaryDto summary) {
+        SwotSessionEntity session = sessionRepository.findById(sessionId).orElseThrow();
+        session.setName(summary.getSessionName());
+        sessionRepository.save(session);
+
+        // versioning
+        SwotVersionEntity version = new SwotVersionEntity();
+        version.setSessionId(sessionId);
+        version.setCreatedAt(Instant.now());
+        version.setSavedBy("system"); // Replace with current user context if needed
+        try {
+            version.setData(objectMapper.writeValueAsString(summary));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize summary", e);
         }
-        this.a = a;
-        this.b = b;
-        this.c = c;
-        this.d = d;
+        versionRepository.save(version);
     }
 
-    // Функция принадлежности для трапециевидного числа
-    public double membership(double x) {
-        if (x < a) return 0;
-        if (a <= x && x < b) return (x - a) / (b - a);
-        if (b <= x && x <= c) return 1;
-        if (c < x && x <= d) return (d - x) / (d - c);
-        return 0;
+    public List<SwotVersionEntity> getVersions(Long sessionId) {
+        return versionRepository.findBySessionIdOrderByCreatedAtDesc(sessionId);
     }
 
-    // Геттеры
-    public double getA() { return a; }
-    public double getB() { return b; }
-    public double getC() { return c; }
-    public double getD() { return d; }
-}
-
-
-
-// Основной класс для Fuzzy SWOT анализа
-public class FuzzySWOTAnalysis {
-    private List<SwotFactor> internalFactors;
-    private List<SwotFactor> externalFactors;
-
-    public FuzzySWOTAnalysis() {
-        this.internalFactors = new ArrayList<>();
-        this.externalFactors = new ArrayList<>();
+    public SwotSummaryDto getVersionData(Long versionId) {
+        SwotVersionEntity version = versionRepository.findById(versionId).orElseThrow();
+        try {
+            return objectMapper.readValue(version.getData(), SwotSummaryDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to deserialize version data", e);
+        }
     }
 
-    // Добавление факторов
-    public void addInternalFactor(SwotFactor factor) {
-        internalFactors.add(factor);
-    }
-
-    public void addExternalFactor(SwotFactor factor) {
-        externalFactors.add(factor);
-    }
-
-    // Агрегация внутренних и внешних факторов (минимальное значение функций принадлежности)
-    public double aggregateMembership(SwotFactor internal, SwotFactor external, double x, double y) {
-        double muInternal = internal.getFuzzyNumber().membership(x);
-        double muExternal = external.getFuzzyNumber().membership(y);
-        return Math.min(muInternal, muExternal);
-    }
-
-
-
-    public static void main(String[] args) {
-        // Пример использования
-
+    public void restoreVersion(Long sessionId, Long versionId) {
+        SwotSummaryDto versionData = getVersionData(versionId);
+        saveSummary(sessionId, versionData);
     }
 }

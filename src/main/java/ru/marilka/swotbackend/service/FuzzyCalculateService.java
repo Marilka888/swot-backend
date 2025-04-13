@@ -2,119 +2,90 @@ package ru.marilka.swotbackend.service;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.marilka.swotbackend.model.SwotFactor;
+import ru.marilka.swotbackend.model.Result;
+import ru.marilka.swotbackend.model.Strategy;
 import ru.marilka.swotbackend.model.TrapezoidalFuzzyNumber;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class FuzzyCalculateService {
 
-    public Map<String, Double> analyze(double alpha) {
-        Map<String, Double> strategyScores = new HashMap<>();
+    public static double closenessCoefficient(double x, double y) {
+        double dPlus = Math.sqrt(Math.pow(10 - x, 2) + Math.pow(10 - y, 2));
+        double dMinus = Math.sqrt(Math.pow(1 - x, 2) + Math.pow(1 - y, 2));
+        return dMinus / (dMinus + dPlus);
+    }
 
-        List<SwotFactor> internals = getAllInternalFactors();
-        List<SwotFactor> externals = getAllExternalFactors();
+    public static void main(String[] args) {
+        // Примерные данные
+        List<TrapezoidalFuzzyNumber> strengths = List.of(
+                new TrapezoidalFuzzyNumber(7, 8, 9, 9.5),
+                new TrapezoidalFuzzyNumber(6, 7, 8, 8.5)
+        );
 
-        for (SwotFactor internal : internals) {
-            for (SwotFactor external : externals) {
-                // Calculate centroid (simplified)
-                double x = (internal.fuzzyNumber().leftLowerBoundary() + internal.fuzzyNumber().rightBottomBoundary()) / 2;
-                double y = (external.fuzzyNumber().leftLowerBoundary() + external.fuzzyNumber().rightBottomBoundary()) / 2;
+        List<TrapezoidalFuzzyNumber> weaknesses = List.of(
+                new TrapezoidalFuzzyNumber(2, 3, 4, 4.5),
+                new TrapezoidalFuzzyNumber(1, 2, 3, 3.5)
+        );
 
-                // Calculate closeness coefficient
-                double dPlus = Math.sqrt(Math.pow(10 - x, 2) + Math.pow(10 - y, 2));
-                double dMinus = Math.sqrt(Math.pow(-10 - x, 2) + Math.pow(-10 - y, 2));
-                double c = dMinus / (dMinus + dPlus);
+        List<TrapezoidalFuzzyNumber> opportunities = List.of(
+                new TrapezoidalFuzzyNumber(6, 7, 8, 9),
+                new TrapezoidalFuzzyNumber(5, 6, 7, 8)
+        );
 
-                String key = internal.id() + "+" + external.id();
-                strategyScores.put(key, c);
+        List<TrapezoidalFuzzyNumber> threats = List.of(
+                new TrapezoidalFuzzyNumber(3, 4, 5, 6),
+                new TrapezoidalFuzzyNumber(2, 3, 4, 5)
+        );
+
+        List<Double> alphas = List.of(0.1, 0.5, 0.9);
+        List<Double> weights = List.of(0.2, 0.3, 0.5);
+
+        List<Result> allStrategies = new ArrayList<>();
+
+        // ST (Strength + Threat)
+        for (int i = 0; i < strengths.size(); i++) {
+            for (int j = 0; j < threats.size(); j++) {
+                String name = "Использовать сильную сторону S" + (i + 1) + " для снижения угрозы T" + (j + 1);
+                Strategy strategy = new Strategy(name, strengths.get(i), threats.get(j));
+                double score = calculatePriority(strategy, alphas, weights);
+                allStrategies.add(new Result(strategy.name(), score));
             }
         }
 
-        return strategyScores.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (e1, e2) -> e1,
-                        LinkedHashMap::new));
-    }
-
-    private List<SwotFactor> getAllInternalFactors() {
-        List<SwotFactor> internals = new ArrayList<>(strengths);
-        internals.addAll(weaknesses);
-        return internals;
-    }
-
-    private List<SwotFactor> getAllExternalFactors() {
-        List<SwotFactor> externals = new ArrayList<>(opportunities);
-        externals.addAll(threats);
-        return externals;
-    }
-
-
-
-
-
-
-
-
-
-    // Агрегация внутренних и внешних факторов (минимальное значение функций принадлежности)
-    public double aggregateMembership(SwotFactor internal, SwotFactor external, double x, double y) {
-        var muInternal = internal.fuzzyNumber().membership(x);
-        var muExternal = external.fuzzyNumber().membership(y);
-        return Math.min(muInternal, muExternal);
-    }
-
-    // Дефаззификация с использованием α-среза
-    public List<Double> defuzzify(double alpha) {
-        List<Double> closenessCoefficients = new ArrayList<>();
-
-        for (SwotFactor internal : internalFactors) {
-            for (SwotFactor external : externalFactors) {
-                // Рассчитываем центр тяжести для трапециевидного числа
-                TrapezoidalFuzzyNumber intFuzzy = internal.getFuzzyNumber();
-                TrapezoidalFuzzyNumber extFuzzy = external.getFuzzyNumber();
-
-                // Центр тяжести по X (для внутреннего фактора)
-                double x_cg = (intFuzzy.getA() + intFuzzy.getB() + intFuzzy.getC() + intFuzzy.getD()) / 4;
-
-                // Центр тяжести по Y (для внешнего фактора)
-                double y_cg = (extFuzzy.getA() + extFuzzy.getB() + extFuzzy.getC() + extFuzzy.getD()) / 4;
-
-                // Рассчитываем коэффициент близости
-                double d_plus = Math.sqrt(Math.pow(10 - x_cg, 2) + Math.pow(10 - y_cg, 2));
-                double d_minus = Math.sqrt(Math.pow(-10 - x_cg, 2) + Math.pow(-10 - y_cg, 2));
-                double c_fj = d_minus / (d_minus + d_plus);
-
-                closenessCoefficients.add(c_fj);
+        // WO (Weakness + Opportunity)
+        for (int i = 0; i < weaknesses.size(); i++) {
+            for (int j = 0; j < opportunities.size(); j++) {
+                String name = "Компенсировать слабость W" + (i + 1) + " за счёт возможности O" + (j + 1);
+                Strategy strategy = new Strategy(name, weaknesses.get(i), opportunities.get(j));
+                double score = calculatePriority(strategy, alphas, weights);
+                allStrategies.add(new Result(strategy.name(), score));
             }
         }
 
-        return closenessCoefficients;
+        // Сортировка по приоритету
+        allStrategies.sort((a, b) -> Double.compare(b.score(), a.score()));
+
+        // Вывод
+        System.out.println("📋 Приоритезация стратегий (по убыванию):");
+        int rank = 1;
+        for (Result r : allStrategies) {
+            System.out.printf("%2d. %-60s | Score = %.4f%n", rank++, r.description(), r.score());
+        }
     }
 
-    // Приоритизация стратегий
-    public Map<String, Double> prioritizeStrategies(List<String> strategies, List<Double> closenessCoefficients) {
-        if (strategies.size() != closenessCoefficients.size()) {
-            throw new IllegalArgumentException("Strategies and coefficients lists must have the same size");
+    static double calculatePriority(Strategy s, List<Double> alphas, List<Double> weights) {
+        double total = 0.0;
+        for (int i = 0; i < alphas.size(); i++) {
+            double alpha = alphas.get(i);
+            double xi = s.internal().alphaCutCenter(alpha);
+            double yi = s.external().alphaCutCenter(alpha);
+            double cc = closenessCoefficient(xi, yi);
+            total += cc * weights.get(i);
         }
-
-        Map<String, Double> strategyPriorities = new HashMap<>();
-        for (int i = 0; i < strategies.size(); i++) {
-            strategyPriorities.put(strategies.get(i), closenessCoefficients.get(i));
-        }
-
-        // Сортировка по убыванию коэффициента близости
-        return strategyPriorities.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .collect(LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), LinkedHashMap::putAll);
+        return total;
     }
 }

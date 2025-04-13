@@ -1,5 +1,7 @@
 package ru.marilka.swotbackend.model;
 
+import java.util.List;
+
 /**
  * Трапецевидное нечеткое число
  *
@@ -14,15 +16,32 @@ public record TrapezoidalFuzzyNumber(
         double rightUpperBoundary,
         double rightBottomBoundary
 ) {
-    public double membership(double x) {
-        if (x < leftLowerBoundary) return 0;
-        if (x < leftUpperBoundary) {
-            return (x - leftLowerBoundary) / (leftUpperBoundary - leftLowerBoundary);
+    public static TrapezoidalFuzzyNumber weightedAverage(
+            List<TrapezoidalFuzzyNumber> values,
+            List<Double> weights
+    ) {
+        if (values.size() != weights.size()) {
+            throw new IllegalArgumentException("Размеры списков оценок и весов не совпадают.");
         }
-        if (x <= rightUpperBoundary) return 1;
-        if (x <= rightBottomBoundary) {
-            return (rightBottomBoundary - x) / (rightBottomBoundary - rightUpperBoundary);
+
+        double sumWeights = weights.stream().mapToDouble(Double::doubleValue).sum();
+
+        double a = 0, b = 0, c = 0, d = 0;
+        for (int i = 0; i < values.size(); i++) {
+            double w = weights.get(i) / sumWeights; // нормализуем веса
+            TrapezoidalFuzzyNumber t = values.get(i);
+            a += t.leftLowerBoundary() * w;
+            b += t.leftUpperBoundary() * w;
+            c += t.rightUpperBoundary() * w;
+            d += t.rightBottomBoundary() * w;
         }
-        return 0;
+
+        return new TrapezoidalFuzzyNumber(a, b, c, d);
+    }
+
+    public double alphaCutCenter(double alpha) {
+        double left = alpha * (leftUpperBoundary - leftLowerBoundary) + leftLowerBoundary;
+        double right = rightBottomBoundary - alpha * (rightBottomBoundary - rightUpperBoundary);
+        return (left + right) / 2.0;
     }
 }
