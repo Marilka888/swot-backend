@@ -4,13 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import org.springframework.stereotype.Service;
-import ru.marilka.swotbackend.model.entity.SessionEntity;
-import ru.marilka.swotbackend.model.entity.SessionVersion;
+import ru.marilka.swotbackend.model.entity.*;
 import ru.marilka.swotbackend.model.SummaryResponse;
-import ru.marilka.swotbackend.model.entity.SwotSession;
-import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
 import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.SwotSessionRepository;
+import ru.marilka.swotbackend.repository.VersionRepository;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -24,12 +22,26 @@ public class SessionService {
 
     private final SwotSessionRepository repo;
     private final SessionRepository sessionRepository;
+    private final VersionRepository versionRepository;
 
 
-    public SessionService(SwotSessionRepository repo, SessionRepository sessionRepository) {
+    public SessionService(SwotSessionRepository repo, SessionRepository sessionRepository, VersionRepository versionRepository) {
         this.repo = repo;
         this.sessionRepository = sessionRepository;
+        this.versionRepository = versionRepository;
     }
+
+    public SessionVersionEntity createNewVersion(Long sessionId) {
+        SessionEntity session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        SessionVersionEntity version = new SessionVersionEntity();
+        version.setSession(session);
+        version.setTimestamp(LocalDateTime.now());
+
+        return versionRepository.save(version);
+    }
+
     public void completeLastSession() {
         SessionEntity session = sessionRepository.findTopByOrderByIdDesc()
                 .orElseThrow(() -> new RuntimeException("Сессия не найдена"));

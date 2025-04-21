@@ -2,6 +2,7 @@ package ru.marilka.swotbackend.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.marilka.swotbackend.model.entity.SessionVersionEntity;
 import ru.marilka.swotbackend.model.entity.SwotSession;
 import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
 import ru.marilka.swotbackend.service.SessionService;
@@ -30,6 +31,13 @@ public class SessionController {
         sessionService.completeLastSession();
         return ResponseEntity.ok("Сессия завершена");
     }
+
+    @PostMapping("/{sessionId}/versions")
+    public ResponseEntity<SessionVersionEntity> createVersion(@PathVariable Long sessionId) {
+        SessionVersionEntity version = sessionService.createNewVersion(sessionId);
+        return ResponseEntity.ok(version);
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> getSession(@PathVariable String id) {
