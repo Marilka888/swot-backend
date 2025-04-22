@@ -2,6 +2,7 @@ package ru.marilka.swotbackend.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.marilka.swotbackend.model.SwotSummaryDto;
 import ru.marilka.swotbackend.model.entity.AlternativeDto;
@@ -24,6 +25,7 @@ public class SwotController {
     private final AlternativeService alternativeService;
 
     @PostMapping("/complete")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> completeSession() {
         sessionService.completeLastSession();
         return ResponseEntity.ok("Сессия завершена");
@@ -35,6 +37,7 @@ public class SwotController {
     }
 
     @PostMapping("/{id}/summary")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateSummary(@PathVariable Long id, @RequestBody SwotSummaryDto summary) {
         swotService.saveSummary(id, summary);
         return ResponseEntity.ok().build();

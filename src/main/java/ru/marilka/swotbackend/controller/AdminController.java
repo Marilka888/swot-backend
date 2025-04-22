@@ -1,7 +1,9 @@
 package ru.marilka.swotbackend.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ru.marilka.swotbackend.model.entity.AppUser;
@@ -15,17 +17,14 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 @CrossOrigin
 @PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
 public class AdminController {
 
     private final AppUserRepository userRepo;
     private final PasswordEncoder encoder;
 
-    public AdminController(AppUserRepository userRepo, PasswordEncoder encoder) {
-        this.userRepo = userRepo;
-        this.encoder = encoder;
-    }
-
     @PostMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AppUser> createUser(@RequestBody Map<String, Object> body) {
         String username = (String) body.get("username");
         String rawPassword = (String) body.get("password");
@@ -49,6 +48,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userRepo.deleteById(id);
         return ResponseEntity.ok().build();
