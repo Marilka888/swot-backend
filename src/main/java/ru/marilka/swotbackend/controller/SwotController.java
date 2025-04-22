@@ -1,11 +1,14 @@
 package ru.marilka.swotbackend.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.marilka.swotbackend.model.*;
+import ru.marilka.swotbackend.model.SwotSummaryDto;
 import ru.marilka.swotbackend.model.entity.AlternativeDto;
+import ru.marilka.swotbackend.model.entity.SessionVersionEntity;
 import ru.marilka.swotbackend.model.entity.SwotVersionEntity;
 import ru.marilka.swotbackend.service.AlternativeService;
+import ru.marilka.swotbackend.service.SessionService;
 import ru.marilka.swotbackend.service.SwotService;
 
 import java.util.List;
@@ -13,14 +16,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/session")
 @CrossOrigin
+@RequiredArgsConstructor
 public class SwotController {
 
     private final SwotService swotService;
+    private final SessionService sessionService;
     private final AlternativeService alternativeService;
 
-    public SwotController(SwotService swotService, AlternativeService alternativeService) {
-        this.swotService = swotService;
-        this.alternativeService = alternativeService;
+    @PostMapping("/complete")
+    public ResponseEntity<String> completeSession() {
+        sessionService.completeLastSession();
+        return ResponseEntity.ok("Сессия завершена");
     }
 
     @GetMapping("/{id}/summary")
@@ -58,5 +64,11 @@ public class SwotController {
     @PostMapping("/alternatives")
     public List<AlternativeDto> getAlternatives(@RequestBody List<Long> request) {
         return alternativeService.calculateSelectedAlternatives(request);
+    }
+
+    @PostMapping("/{sessionId}/versions")
+    public ResponseEntity<SessionVersionEntity> createVersion(@PathVariable Long sessionId) {
+        SessionVersionEntity version = sessionService.createNewVersion(sessionId);
+        return ResponseEntity.ok(version);
     }
 }

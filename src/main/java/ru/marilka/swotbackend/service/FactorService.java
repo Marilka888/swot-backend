@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import ru.marilka.swotbackend.model.Factor;
 import ru.marilka.swotbackend.model.Range;
-import ru.marilka.swotbackend.model.entity.AlternativeDto;
 import ru.marilka.swotbackend.model.entity.FactorEntity;
 import ru.marilka.swotbackend.repository.FactorRepository;
 
@@ -24,6 +23,7 @@ public class FactorService {
     public Factor create(Factor request) {
         return getFactor(factorRepository.save(getFactor(request)));
     }
+
     public void saveSelectedFactorIds(List<Long> factorIds) {
         // Здесь можно, например, сохранить их в сессию, или проставить флаг в базе
         List<FactorEntity> selected = factorRepository.findAllById(factorIds);
@@ -34,6 +34,7 @@ public class FactorService {
 
         factorRepository.saveAll(selected);
     }
+
     @Transactional
     public List<Factor> update(List<Factor> request) {
         String type = request.getFirst().getType();
@@ -59,20 +60,8 @@ public class FactorService {
                 .toList();
     }
 
-    public List<Factor> getAll() {
-        return factorRepository.findAll().stream()
-                .map(FactorService::getFactorWithMassCenter)
-                .toList();
-    }
-
     public List<Factor> getFactors(Long sessionId, Long versionId) {
         return factorRepository.findAllBySessionIdAndVersionId(sessionId, versionId).stream()
-                .map(FactorService::getFactorWithMassCenter)
-                .toList();
-    }
-
-    public List<Factor> getResultFactors() {
-        return factorRepository.findAll().stream()
                 .map(FactorService::getFactorWithMassCenter)
                 .toList();
     }

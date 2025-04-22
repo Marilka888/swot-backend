@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     Optional<SessionEntity> findTopByOrderByIdDesc(); // Последняя созданная
+
     List<SessionEntity> findAllByUserId(Long userId); // Последняя созданная
 }
 

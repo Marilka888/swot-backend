@@ -1,4 +1,4 @@
-package ru.marilka.swotbackend.model;
+package ru.marilka.swotbackend.model.request;
 
 import ru.marilka.swotbackend.model.entity.SwotFactor;
 

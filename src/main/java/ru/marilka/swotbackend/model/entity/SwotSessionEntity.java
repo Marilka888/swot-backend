@@ -3,15 +3,8 @@ package ru.marilka.swotbackend.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import ru.marilka.swotbackend.model.SwotSummaryDto;
 
 import java.util.List;
-import java.util.Map;
-
-import jakarta.persistence.*;
-
-import java.util.List;
-import java.util.Map;
 
 @Entity
 @Getter
@@ -35,10 +28,7 @@ public class SwotSessionEntity {
     @CollectionTable(name = "swot_factor_numbers", joinColumns = @JoinColumn(name = "session_id"))
     private List<FactorEntry> factorNumbers;
 
-
     @Lob
     @Column(name = "summary_json", columnDefinition = "TEXT")
     private String summaryJson; // хранение сериализованного SwotSummaryDto
-
-
 }

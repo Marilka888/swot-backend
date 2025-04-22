@@ -34,7 +34,7 @@ public class AlternativeCalculationService {
 
         return results;
     }
-
+// todo
     // пример: возвращает вес фактора (замени на работу с базой или fuzzy-логикой)
     private double getFactorValue(String factorCode) {
         // TODO: можно загрузить значения из базы или кэш

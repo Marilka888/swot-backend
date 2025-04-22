@@ -27,7 +27,7 @@ public class AuthController {
     public Map<String, Object> register(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String password = encoder.encode(request.get("password"));
-         encoder.encode(request.get("password"));
+        encoder.encode(request.get("password"));
         System.out.println(encoder.encode(request.get("1111")));
 
         if (userRepo.findByUsername(username).isPresent()) {

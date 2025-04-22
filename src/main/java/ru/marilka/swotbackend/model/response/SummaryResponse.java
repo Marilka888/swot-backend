@@ -1,4 +1,4 @@
-package ru.marilka.swotbackend.model;
+package ru.marilka.swotbackend.model.response;
 
 import java.util.List;
 import java.util.Map;

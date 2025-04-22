@@ -2,9 +2,10 @@ package ru.marilka.swotbackend.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
 import ru.marilka.swotbackend.model.SwotSummaryDto;
+import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
 import ru.marilka.swotbackend.model.entity.SwotVersionEntity;
 import ru.marilka.swotbackend.repository.SwotSessionRepository;
 import ru.marilka.swotbackend.repository.SwotVersionRepository;
@@ -13,17 +14,12 @@ import java.time.Instant;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SwotService {
 
     private final SwotSessionRepository sessionRepository;
     private final SwotVersionRepository versionRepository;
     private final ObjectMapper objectMapper;
-
-    public SwotService(SwotSessionRepository sessionRepository, SwotVersionRepository versionRepository, ObjectMapper objectMapper) {
-        this.sessionRepository = sessionRepository;
-        this.versionRepository = versionRepository;
-        this.objectMapper = objectMapper;
-    }
 
     public SwotSummaryDto buildSummary(Long sessionId) {
         SwotSessionEntity session = sessionRepository.findById(sessionId).orElseThrow();

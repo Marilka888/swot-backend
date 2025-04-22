@@ -6,7 +6,6 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 
-
 import java.time.Instant;
 
 @Entity
@@ -19,8 +18,5 @@ public class SwotSession {
 
     private String name;
     private String userId;
-
     private Instant createdAt = Instant.now();
-
-    // Getters and setters
 }
