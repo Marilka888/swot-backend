@@ -69,8 +69,8 @@ public class SwotController {
     }
 
     @PostMapping("/{sessionId}/versions")
-    public ResponseEntity<SessionVersionEntity> createVersion(@PathVariable Long sessionId) {
-        SessionVersionEntity version = sessionService.createNewVersion(sessionId);
+    public ResponseEntity<SwotVersionEntity> createVersion(@PathVariable Long sessionId) {
+        SwotVersionEntity version = sessionService.createNewVersion(sessionId);
         return ResponseEntity.ok(version);
     }
 }

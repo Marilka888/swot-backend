@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.SwotSummaryDto;
+import ru.marilka.swotbackend.model.entity.SessionEntity;
 import ru.marilka.swotbackend.model.entity.SwotVersionEntity;
-import ru.marilka.swotbackend.repository.SwotSessionRepository;
+import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.SwotVersionRepository;
 
 import java.time.Instant;
@@ -16,19 +17,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SwotService {
 
-    private final SwotSessionRepository sessionRepository;
+    private final SessionRepository sessionRepository;
     private final SwotVersionRepository versionRepository;
     private final ObjectMapper objectMapper;
 
     public SwotSummaryDto buildSummary(Long sessionId) {
-        SwotSessionEntity session = sessionRepository.findById(sessionId).orElseThrow();
+        SessionEntity session = sessionRepository.findById(sessionId).orElseThrow();
         SwotSummaryDto dto = new SwotSummaryDto();
         dto.setSessionName(session.getName());
         return dto;
     }
 
     public void saveSummary(Long sessionId, SwotSummaryDto summary) {
-        SwotSessionEntity session = sessionRepository.findById(sessionId).orElseThrow();
+        SessionEntity session = sessionRepository.findById(sessionId).orElseThrow();
         session.setName(summary.getSessionName());
         sessionRepository.save(session);
 

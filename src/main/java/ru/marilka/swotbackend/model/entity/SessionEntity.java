@@ -24,7 +24,7 @@ public class SessionEntity {
 
     private LocalDateTime lastModified;
 
-    private String adminId;
+    private Long adminId;
     private String notes;
     private double alternativeDifference;
     private double trapezoidDifference;

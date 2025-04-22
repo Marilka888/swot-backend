@@ -28,6 +28,7 @@ public class AppUser implements UserDetails {
     private Long companyId;
     private boolean isReg;
     private String role;
+    private String fullName;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

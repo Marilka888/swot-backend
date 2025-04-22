@@ -105,7 +105,7 @@ public class FactorService {
 
         return SwotFactorEntity.builder()
                 .id(a.getId())
-                .name(a.getName())
+                .title(a.getName())
                 .type(a.getType())
                 .weightMin(min)
                 .weightMax(max)

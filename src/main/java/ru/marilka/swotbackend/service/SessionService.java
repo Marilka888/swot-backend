@@ -3,10 +3,11 @@ package ru.marilka.swotbackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.entity.SessionEntity;
+import ru.marilka.swotbackend.model.entity.SwotVersionEntity;
 import ru.marilka.swotbackend.repository.SessionRepository;
-import ru.marilka.swotbackend.repository.SwotSessionRepository;
 import ru.marilka.swotbackend.repository.VersionRepository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,17 +17,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SessionService {
 
-    private final SwotSessionRepository repo;
     private final SessionRepository sessionRepository;
     private final VersionRepository versionRepository;
 
-    public SessionVersionEntity createNewVersion(Long sessionId) {
-        SessionEntity session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        SessionVersionEntity version = new SessionVersionEntity();
-        version.setSession(session);
-        version.setTimestamp(LocalDateTime.now());
+    public SwotVersionEntity createNewVersion(Long sessionId) {
+       SwotVersionEntity version = new SwotVersionEntity();
+        version.setSessionId(sessionId);
+        version.setCreatedAt(Instant.from(LocalDateTime.now()));
 
         return versionRepository.save(version);
     }
@@ -46,13 +43,13 @@ public class SessionService {
     }
 
     public List<SessionEntity> getUserSessions() {
-        return sessionRepository.findAllByUserId(1L);
+        return sessionRepository.findAllByAdminId(1L);
     }
 
-    public SwotSessionEntity create(String name, String userId) {
-        SwotSessionEntity session = new SwotSessionEntity();
+    public SessionEntity create(String name, String userId) {
+        SessionEntity session = new SessionEntity();
         session.setName(name);
-        return repo.save(session);
+        return sessionRepository.save(session);
     }
 
 }

@@ -28,7 +28,7 @@ public class AdminController {
     public ResponseEntity<AppUser> createUser(@RequestBody Map<String, Object> body) {
         String username = (String) body.get("username");
         String rawPassword = (String) body.get("password");
-        List<String> rolesList = (List<String>) body.get("roles");
+        String role = (String) body.get("role");
 
         if (userRepo.findByUsername(username).isPresent()) {
             return ResponseEntity.badRequest().build();
@@ -37,7 +37,7 @@ public class AdminController {
         AppUser user = new AppUser();
         user.setUsername(username);
         user.setPassword(encoder.encode(rawPassword));
-        user.setRoles(new HashSet<>(rolesList));
+        user.setRole(role);
 
         return ResponseEntity.ok(userRepo.save(user));
     }

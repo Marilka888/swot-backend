@@ -39,7 +39,7 @@ public class AuthController {
         AppUser user = new AppUser();
         user.setUsername(username);
         user.setPassword(password);
-        user.setRoles(Set.of("USER"));
+        user.setRole("USER");
         userRepo.save(user);
 
         return Map.of("token", jwt.generateToken(username));
@@ -50,7 +50,7 @@ public class AuthController {
         System.out.println(encoder.encode("1111"));
         String username = request.get("username");
         String password = request.get("password");
-        System.out.println();
+
         Optional<AppUser> userOptional = userRepo.findByUsername(username);
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
@@ -69,7 +69,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "token", token,
                 "username", user.getUsername(),
-                "roles", user.getRoles()
+                "role", user.getRole()
         ));
     }
 

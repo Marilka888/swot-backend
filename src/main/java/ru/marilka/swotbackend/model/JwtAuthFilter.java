@@ -15,6 +15,7 @@ import ru.marilka.swotbackend.repository.AppUserRepository;
 import ru.marilka.swotbackend.util.JwtUtil;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Component
@@ -50,9 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         UsernamePasswordAuthenticationToken authToken =
                                 new UsernamePasswordAuthenticationToken(
                                         user.getUsername(), null,
-                                        user.getRoles().stream()
-                                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                                                .collect(Collectors.toList())
+                                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
                                 );
 
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
