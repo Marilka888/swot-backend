@@ -4,18 +4,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Getter
+@Table(name = "company")
 @Setter
-public class SessionVersionEntity {
+@Getter
+public class CompanyEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private LocalDateTime timestamp;
-
-    @ManyToOne
-    private SessionEntity session;
+    private String name;
+    private String domain;
 }

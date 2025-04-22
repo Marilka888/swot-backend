@@ -2,7 +2,6 @@ package ru.marilka.swotbackend.config;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import ru.marilka.swotbackend.model.entity.SwotFactor;
 import ru.marilka.swotbackend.repository.SwotFactorRepository;
 
 import java.util.Arrays;

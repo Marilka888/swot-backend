@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "sessions")
+@Table(name = "session")
 @Setter
 @Getter
 public class SessionEntity {
@@ -15,8 +15,6 @@ public class SessionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private Long userId;
 
     private String name;
 
@@ -26,7 +24,7 @@ public class SessionEntity {
 
     private LocalDateTime lastModified;
 
-    private String admin;
+    private String adminId;
     private String notes;
     private double alternativeDifference;
     private double trapezoidDifference;

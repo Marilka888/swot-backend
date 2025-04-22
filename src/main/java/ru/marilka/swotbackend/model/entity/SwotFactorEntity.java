@@ -3,18 +3,21 @@ package ru.marilka.swotbackend.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "swot_factor")
 @Setter
-public class FactorEntity {
+@Getter
+public class SwotFactorEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @Column(nullable = false)
+    private String title;
+    @Column(nullable = false)
     private String type;
 
     private double weightMin;
@@ -25,6 +28,8 @@ public class FactorEntity {
 
     @Column(nullable = false)
     private Long versionId;
+    @Column(nullable = false)
     private Long sessionId;
-
+    @Column(nullable = false)
+    private Long userId;
 }

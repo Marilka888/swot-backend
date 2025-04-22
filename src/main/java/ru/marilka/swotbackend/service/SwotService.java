@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.SwotSummaryDto;
-import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
 import ru.marilka.swotbackend.model.entity.SwotVersionEntity;
 import ru.marilka.swotbackend.repository.SwotSessionRepository;
 import ru.marilka.swotbackend.repository.SwotVersionRepository;

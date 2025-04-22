@@ -2,8 +2,8 @@ package ru.marilka.swotbackend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.marilka.swotbackend.model.entity.AlternativeDto;
-import ru.marilka.swotbackend.model.entity.FactorEntity;
+import ru.marilka.swotbackend.model.AlternativeDto;
+import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
 import ru.marilka.swotbackend.repository.FactorRepository;
 
 import java.util.*;
@@ -16,20 +16,20 @@ public class AlternativeService {
     private static final List<Double> ALPHA_LEVELS = List.of(0.1, 0.5, 0.9);
 
     public List<AlternativeDto> calculateSelectedAlternatives(List<Long> selectedIds) {
-        List<FactorEntity> selectedFactors = factorRepository.findAllById(selectedIds);
+        List<SwotFactorEntity> selectedFactors = factorRepository.findAllById(selectedIds);
 
-        List<FactorEntity> internalFactors = selectedFactors.stream()
+        List<SwotFactorEntity> internalFactors = selectedFactors.stream()
                 .filter(f -> f.getType().equalsIgnoreCase("strong") || f.getType().equalsIgnoreCase("weak"))
                 .toList();
 
-        List<FactorEntity> externalFactors = selectedFactors.stream()
+        List<SwotFactorEntity> externalFactors = selectedFactors.stream()
                 .filter(f -> f.getType().equalsIgnoreCase("opportunity") || f.getType().equalsIgnoreCase("threat"))
                 .toList();
 
         List<AlternativeDto> alternatives = new ArrayList<>();
 
-        for (FactorEntity internal : internalFactors) {
-            for (FactorEntity external : externalFactors) {
+        for (SwotFactorEntity internal : internalFactors) {
+            for (SwotFactorEntity external : externalFactors) {
                 double ra = 0;
                 double dPlusSum = 0;
                 double dMinusSum = 0;
@@ -56,8 +56,8 @@ public class AlternativeService {
                 String strategyType = defineStrategy(internal.getType(), external.getType());
 
                 alternatives.add(new AlternativeDto(
-                        internal.getName(),
-                        external.getName(),
+                        internal.getTitle(),
+                        external.getTitle(),
                         internalCenter,
                         externalCenter,
                         dPlusAvg,
@@ -75,20 +75,20 @@ public class AlternativeService {
 
 
     public List<AlternativeDto> calculateAlternatives() {
-        List<FactorEntity> allFactors = factorRepository.findAll();
+        List<SwotFactorEntity> allFactors = factorRepository.findAll();
 
-        List<FactorEntity> internalFactors = allFactors.stream()
+        List<SwotFactorEntity> internalFactors = allFactors.stream()
                 .filter(f -> f.getType().equalsIgnoreCase("strong") || f.getType().equalsIgnoreCase("weak"))
                 .toList();
 
-        List<FactorEntity> externalFactors = allFactors.stream()
+        List<SwotFactorEntity> externalFactors = allFactors.stream()
                 .filter(f -> f.getType().equalsIgnoreCase("opportunity") || f.getType().equalsIgnoreCase("threat"))
                 .toList();
 
         List<AlternativeDto> alternatives = new ArrayList<>();
 
-        for (FactorEntity internal : internalFactors) {
-            for (FactorEntity external : externalFactors) {
+        for (SwotFactorEntity internal : internalFactors) {
+            for (SwotFactorEntity external : externalFactors) {
                 double ra = 0;
                 double dPlusSum = 0;
                 double dMinusSum = 0;
@@ -115,8 +115,8 @@ public class AlternativeService {
                 String strategyType = defineStrategy(internal.getType(), external.getType());
 
                 alternatives.add(new AlternativeDto(
-                        internal.getName(),
-                        external.getName(),
+                        internal.getTitle(),
+                        external.getTitle(),
                         internalCenter,
                         externalCenter,
                         dPlusAvg,
@@ -132,7 +132,7 @@ public class AlternativeService {
                 .toList();
     }
 
-    private double trapezoidalMassCenter(FactorEntity f) {
+    private double trapezoidalMassCenter(SwotFactorEntity f) {
         double a = f.getWeightMin();
         double b = f.getWeightAvg1();
         double c = f.getWeightAvg2();
@@ -140,7 +140,7 @@ public class AlternativeService {
         return (a + 2 * b + 2 * c + d) / 6;
     }
 
-    private double alphaCutMassCenter(FactorEntity f, double alpha) {
+    private double alphaCutMassCenter(SwotFactorEntity f, double alpha) {
         double a = f.getWeightMin();
         double b = f.getWeightAvg1();
         double c = f.getWeightAvg2();

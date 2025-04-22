@@ -4,25 +4,17 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
-
 @Entity
-@Table(name = "swot_version")
-@Getter
+@Table(name = "swot_user_session")
 @Setter
-public class SwotVersionEntity {
-
+@Getter
+public class SwotUserSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private double userCoefficient;
+    @Column(nullable = false)
     private Long sessionId;
-
-    @Lob
-    private String data;
-
-    private Instant createdAt;
-
-    private String savedBy;
+    @Column(nullable = false)
+    private Long userId;
 }
-

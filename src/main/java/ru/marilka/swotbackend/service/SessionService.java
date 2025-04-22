@@ -3,8 +3,6 @@ package ru.marilka.swotbackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.entity.SessionEntity;
-import ru.marilka.swotbackend.model.entity.SessionVersionEntity;
-import ru.marilka.swotbackend.model.entity.SwotSessionEntity;
 import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.SwotSessionRepository;
 import ru.marilka.swotbackend.repository.VersionRepository;

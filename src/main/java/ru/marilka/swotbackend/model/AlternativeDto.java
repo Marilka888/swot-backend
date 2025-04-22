@@ -1,4 +1,4 @@
-package ru.marilka.swotbackend.model.entity;
+package ru.marilka.swotbackend.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

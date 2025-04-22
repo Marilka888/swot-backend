@@ -1,7 +1,5 @@
 package ru.marilka.swotbackend.model.request;
 
-import ru.marilka.swotbackend.model.entity.SwotFactor;
-
 import java.util.List;
 
 
