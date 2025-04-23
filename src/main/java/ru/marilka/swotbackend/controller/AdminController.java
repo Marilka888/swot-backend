@@ -1,30 +1,33 @@
 package ru.marilka.swotbackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.marilka.swotbackend.model.entity.AppUser;
+import ru.marilka.swotbackend.model.request.UserRequest;
 import ru.marilka.swotbackend.repository.AppUserRepository;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin
-@PreAuthorize("hasRole('ADMIN')")
-@RequiredArgsConstructor
+ @RequiredArgsConstructor
 public class AdminController {
 
     private final AppUserRepository userRepo;
     private final PasswordEncoder encoder;
 
     @PostMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AppUser> createUser(@RequestBody Map<String, Object> body) {
         String username = (String) body.get("username");
         String rawPassword = (String) body.get("password");
@@ -52,6 +55,38 @@ public class AdminController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userRepo.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody UserRequest request) {
+        var principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = principal.getUsername();
+        var appUser = userRepo.findByUsername(username).orElseThrow();
+
+        if (userRepo.findByUsername(request.getUsername()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Пользователь с таким логином уже существует");
+        }
+
+        AppUser user = new AppUser();
+        user.setUsername(request.getUsername());
+        user.setPassword(encoder.encode("default123")); // или сгенерировать, или присылать
+        user.setRole(request.getRole());
+        user.setFullName(request.getName());
+        user.setCompanyId(appUser.getCompanyId());
+
+        userRepo.save(user);
+        return ResponseEntity.ok("Пользователь создан");
+    }
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest request) {
+        AppUser user = userRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+         user.setRole(request.getRole());
+
+        userRepo.save(user);
+        return ResponseEntity.ok("Пользователь обновлён");
     }
 
 }

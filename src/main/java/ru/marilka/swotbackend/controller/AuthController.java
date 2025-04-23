@@ -8,8 +8,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.marilka.swotbackend.model.entity.AppUser;
 import ru.marilka.swotbackend.model.entity.CompanyEntity;
+import ru.marilka.swotbackend.model.request.UserRequest;
 import ru.marilka.swotbackend.model.response.UserResponse;
 import ru.marilka.swotbackend.repository.AppUserRepository;
 import ru.marilka.swotbackend.repository.CompanyRepository;
@@ -69,8 +71,9 @@ public class AuthController {
         }
 
         String token = jwt.generateToken(user.getUsername());
-        user.setToken(token);                  // ← сохранить токен
-        userRepo.save(user);                  // ← сохранить в базу
+        user.setToken(token);
+        user.setReg(true);
+        userRepo.save(user);
 
         return ResponseEntity.ok(Map.of(
                 "token", token,
@@ -78,7 +81,6 @@ public class AuthController {
                 "role", user.getRole()
         ));
     }
-
 
     @GetMapping("/profile")
     public ResponseEntity<Object> getProfile() {
