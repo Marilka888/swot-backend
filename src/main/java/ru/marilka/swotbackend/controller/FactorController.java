@@ -61,7 +61,6 @@ public class FactorController {
     }
 
     @PostMapping("/selected")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> saveSelectedFactors(@RequestBody SelectedFactorsRequest request) {
         alternativeService.calculateSelectedAlternatives(request.getFactorIds());
         return ResponseEntity.ok().build();

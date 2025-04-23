@@ -38,9 +38,11 @@ public class FactorService {
     @Transactional
     public List<Factor> update(List<Factor> request) {
         String type = request.getFirst().getType();
+        String sessionId = request.getFirst().getSessionId();
+        var versionId = request.getFirst().getVersionId();
         Map<String, List<Factor>> map = request.stream().collect(Collectors.groupingBy(Factor::getType));
         List<Factor> factorList = map.get(type);
-        List<SwotFactorEntity> existingFactors = factorRepository.findByType(type);
+        List<SwotFactorEntity> existingFactors = factorRepository.findAllBySessionIdAndVersionIdAndType(Long.valueOf(sessionId), versionId, type);
 
         // Удаляем устаревшие
         List<Long> updatedIds = factorList.stream().map(Factor::getId).toList();
@@ -94,6 +96,9 @@ public class FactorService {
 
         double massCenter = (a1 + b1 + b2 + a2) / 4.0;
         factor.setMassCenter(massCenter);
+        factor.setSessionId(String.valueOf(a.getSessionId()));
+        factor.setVersionId(a.getVersionId());
+        factor.setUserId(a.getUserId());
         return factor;
     }
 
@@ -106,6 +111,9 @@ public class FactorService {
         return SwotFactorEntity.builder()
                 .id(a.getId())
                 .title(a.getName())
+                .sessionId(Long.valueOf(a.getSessionId()))
+                .versionId(a.getVersionId())
+                .userId(a.getUserId())
                 .type(a.getType())
                 .weightMin(min)
                 .weightMax(max)

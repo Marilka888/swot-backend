@@ -15,4 +15,7 @@ public interface FactorRepository extends JpaRepository<SwotFactorEntity, Long> 
     @Modifying
     @NativeQuery("DELETE FROM Factor f WHERE f.id = :id")
     void deleteFactorById(Long id);
+
+    List<SwotFactorEntity> findAllBySessionIdAndVersionIdAndType(Long sessionId, Long versionId, String type);
+
 }

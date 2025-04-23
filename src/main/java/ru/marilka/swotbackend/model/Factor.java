@@ -25,6 +25,6 @@ public class Factor {
 
     private double massCenter;
 
-
     private Long versionId;
+    private Long userId;
 }
