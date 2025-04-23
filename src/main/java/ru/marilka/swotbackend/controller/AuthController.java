@@ -4,10 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ru.marilka.swotbackend.model.entity.AppUser;
+import ru.marilka.swotbackend.model.entity.CompanyEntity;
+import ru.marilka.swotbackend.model.response.UserResponse;
 import ru.marilka.swotbackend.repository.AppUserRepository;
+import ru.marilka.swotbackend.repository.CompanyRepository;
 import ru.marilka.swotbackend.util.JwtUtil;
 
 import java.util.Map;
@@ -21,6 +26,7 @@ import java.util.Set;
 public class AuthController {
 
     private final AppUserRepository userRepo;
+    private final CompanyRepository companyRepository;
     private final PasswordEncoder encoder;
     private final JwtUtil jwt;
 
@@ -76,11 +82,17 @@ public class AuthController {
 
     @GetMapping("/profile")
     public ResponseEntity<Object> getProfile() {
-        return ResponseEntity.ok("{\n" +
-                "  \"username\": \"admin\",\n" +
-                "  \"companyName\": \"Роги и Ноги\",\n" +
-                "  \"roles\": [\"ADMIN\"]\n" +
-                "}");
+        var principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var username = principal.getUsername();
+        var user = userRepo.findByUsername(username).orElseThrow();
+        var company = companyRepository.findById(user.getCompanyId()).orElseThrow();
+        var response = UserResponse.builder()
+                .id(user.getId())
+                .company(company.getName())
+                .fullName(username)
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/refresh")

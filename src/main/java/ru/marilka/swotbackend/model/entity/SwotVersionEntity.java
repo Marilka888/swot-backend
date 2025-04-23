@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "swot_version")
@@ -21,7 +22,7 @@ public class SwotVersionEntity {
     @Lob
     private String data;
 
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     private String savedBy;
 }

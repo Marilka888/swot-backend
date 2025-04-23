@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // ← включено!
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/ws/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authProvider())

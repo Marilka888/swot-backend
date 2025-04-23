@@ -11,6 +11,7 @@ import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.SwotVersionRepository;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -36,7 +37,7 @@ public class SwotService {
         // versioning
         SwotVersionEntity version = new SwotVersionEntity();
         version.setSessionId(sessionId);
-        version.setCreatedAt(Instant.now());
+        version.setCreatedAt(LocalDateTime.now());
         version.setSavedBy("system"); // Replace with current user context if needed
         try {
             version.setData(objectMapper.writeValueAsString(summary));

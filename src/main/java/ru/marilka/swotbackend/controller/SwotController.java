@@ -14,7 +14,7 @@ import ru.marilka.swotbackend.service.SwotService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/session")
+@RequestMapping("/v1/session")
 @CrossOrigin
 @RequiredArgsConstructor
 public class SwotController {

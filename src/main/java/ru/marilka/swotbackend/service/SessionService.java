@@ -23,7 +23,7 @@ public class SessionService {
     public SwotVersionEntity createNewVersion(Long sessionId) {
        SwotVersionEntity version = new SwotVersionEntity();
         version.setSessionId(sessionId);
-        version.setCreatedAt(Instant.from(LocalDateTime.now()));
+        version.setCreatedAt(LocalDateTime.now());
 
         return versionRepository.save(version);
     }
