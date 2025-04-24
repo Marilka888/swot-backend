@@ -23,6 +23,14 @@ public class SwotController {
     private final SessionService sessionService;
     private final AlternativeService alternativeService;
 
+    @GetMapping("/alternatives")
+    public ResponseEntity<List<AlternativeDto>> getAlternativesBySessionAndVersion(
+            @RequestParam Long sessionId,
+            @RequestParam(required = false) Long versionId) {
+        List<AlternativeDto> alternatives = alternativeService.calculateAlternatives(sessionId, versionId);
+        return ResponseEntity.ok(alternatives);
+    }
+
     @PostMapping("/complete/{id}")
     public ResponseEntity<?> completeSession(@PathVariable Long id) {
         Long sessionId = id;
@@ -65,10 +73,10 @@ public class SwotController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/alternatives")
-    public List<AlternativeDto> getAlternatives() {
-        return alternativeService.calculateAlternatives();
-    }
+//    @GetMapping("/alternatives")
+//    public List<AlternativeDto> getAlternatives() {
+//        return alternativeService.calculateAlternatives();
+//    }
 
     @PostMapping("/alternatives")
     public List<AlternativeDto> getAlternatives(@RequestBody List<Long> request) {

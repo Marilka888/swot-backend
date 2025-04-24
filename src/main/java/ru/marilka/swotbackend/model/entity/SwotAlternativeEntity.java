@@ -1,13 +1,15 @@
 package ru.marilka.swotbackend.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "swot_alternative")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SwotAlternativeEntity {
 
     @Id

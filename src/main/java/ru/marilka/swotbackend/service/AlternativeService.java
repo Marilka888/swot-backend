@@ -3,15 +3,19 @@ package ru.marilka.swotbackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.AlternativeDto;
+import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
+import ru.marilka.swotbackend.repository.AlternativeRepository;
 import ru.marilka.swotbackend.repository.FactorRepository;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AlternativeService {
     private final FactorRepository factorRepository;
+    private final AlternativeRepository alternativeRepository;
 
     private static final List<Double> ALPHA_LEVELS = List.of(0.1, 0.5, 0.9);
 
@@ -74,8 +78,8 @@ public class AlternativeService {
     }
 
 
-    public List<AlternativeDto> calculateAlternatives() {
-        List<SwotFactorEntity> allFactors = factorRepository.findAll();
+    public List<AlternativeDto> calculateAlternatives(Long sessionId, Long versionId) {
+        List<SwotFactorEntity> allFactors = factorRepository.findAllBySessionIdAndVersionId(sessionId, versionId);
 
         List<SwotFactorEntity> internalFactors = allFactors.stream()
                 .filter(f -> f.getType().equalsIgnoreCase("strong") || f.getType().equalsIgnoreCase("weak"))
@@ -85,7 +89,8 @@ public class AlternativeService {
                 .filter(f -> f.getType().equalsIgnoreCase("opportunity") || f.getType().equalsIgnoreCase("threat"))
                 .toList();
 
-        List<AlternativeDto> alternatives = new ArrayList<>();
+        List<AlternativeDto> result = new ArrayList<>();
+        List<SwotAlternativeEntity> toSave = new ArrayList<>();
 
         for (SwotFactorEntity internal : internalFactors) {
             for (SwotFactorEntity external : externalFactors) {
@@ -114,7 +119,7 @@ public class AlternativeService {
 
                 String strategyType = defineStrategy(internal.getType(), external.getType());
 
-                alternatives.add(new AlternativeDto(
+                AlternativeDto dto = new AlternativeDto(
                         internal.getTitle(),
                         external.getTitle(),
                         internalCenter,
@@ -123,14 +128,34 @@ public class AlternativeService {
                         dMinusAvg,
                         ra,
                         strategyType
-                ));
+                );
+                result.add(dto);
+
+                SwotAlternativeEntity entity = SwotAlternativeEntity.builder()
+                        .sessionId(sessionId)
+                        .versionId(versionId)
+                        .internalFactor(dto.getInternalFactor())
+                        .externalFactor(dto.getExternalFactor())
+                        .internalMassCenter(dto.getInternalMassCenter())
+                        .externalMassCenter(dto.getExternalMassCenter())
+                        .dPlus(dto.getDPlus())
+                        .dMinus(dto.getDMinus())
+                        .closeness(dto.getCloseness())
+                        .strategyType(dto.getStrategyType())
+                        .build();
+
+                toSave.add(entity);
             }
         }
 
-        return alternatives.stream()
+        // Сохраняем все в базу данных
+        alternativeRepository.saveAll(toSave);
+
+        return result.stream()
                 .sorted(Comparator.comparingDouble(AlternativeDto::getCloseness).reversed())
                 .toList();
     }
+
 
     private double trapezoidalMassCenter(SwotFactorEntity f) {
         double a = f.getWeightMin();
@@ -158,5 +183,29 @@ public class AlternativeService {
         if (internalType.equalsIgnoreCase("weak") && externalType.equalsIgnoreCase("threat")) return "WT";
         if (internalType.equalsIgnoreCase("weak") && externalType.equalsIgnoreCase("opportunity")) return "WO";
         return "UNDEFINED";
+    }
+
+    public List<AlternativeDto> getAlternativesBySession(Long sessionId, Long versionId) {
+        List<SwotAlternativeEntity> entities;
+
+        if (versionId != null) {
+            entities = alternativeRepository.findBySessionIdAndVersionId(sessionId, versionId);
+        } else {
+            entities = alternativeRepository.findBySessionId(sessionId);
+        }
+
+        return entities.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    private AlternativeDto toDto(SwotAlternativeEntity entity) {
+        return AlternativeDto.builder()
+                .internalFactor(entity.getInternalFactor())
+                .externalFactor(entity.getExternalFactor())
+                .dPlus(entity.getDPlus())
+                .dMinus(entity.getDMinus())
+                .closeness(entity.getCloseness())
+                .build();
     }
 }

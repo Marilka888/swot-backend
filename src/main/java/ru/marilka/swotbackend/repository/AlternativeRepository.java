@@ -14,4 +14,6 @@ public interface AlternativeRepository extends JpaRepository<SwotAlternativeEnti
 
     List<SwotAlternativeEntity> findBySessionIdAndVersionId(Long sessionId, Long versionId);
 
+    List<SwotAlternativeEntity> findBySessionId(Long sessionId);
+
 }
