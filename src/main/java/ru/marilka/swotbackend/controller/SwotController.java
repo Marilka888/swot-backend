@@ -23,9 +23,9 @@ public class SwotController {
     private final SessionService sessionService;
     private final AlternativeService alternativeService;
 
-    @PostMapping("/complete")
-    public ResponseEntity<?> completeSession() {
-        Long sessionId = 4L;
+    @PostMapping("/complete/{id}")
+    public ResponseEntity<?> completeSession(@PathVariable Long id) {
+        Long sessionId = id;
         sessionService.markSessionAsCompleted(sessionId);
         return ResponseEntity.ok().build();
     }
