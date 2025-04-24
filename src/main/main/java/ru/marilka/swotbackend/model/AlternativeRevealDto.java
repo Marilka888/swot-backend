@@ -10,4 +10,3 @@ public class AlternativeRevealDto {
     private double externalPercent;
 }
 
-

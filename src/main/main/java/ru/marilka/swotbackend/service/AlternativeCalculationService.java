@@ -1,15 +1,16 @@
 package ru.marilka.swotbackend.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.AlternativeDto;
 import ru.marilka.swotbackend.model.AlternativeResultDto;
 import ru.marilka.swotbackend.model.AlternativeRevealDto;
+import ru.marilka.swotbackend.model.RevealDto;
 import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
 import ru.marilka.swotbackend.repository.AlternativeRepository;
 import ru.marilka.swotbackend.repository.FactorRepository;
+import ru.marilka.swotbackend.repository.SessionRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,17 +19,13 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AlternativeCalculationService {
     private static final List<Double> ALPHA_LEVELS = List.of(0.1, 0.5, 0.9);
     private final AlternativeRepository alternativeRepo;
     private final FactorRepository factorRepository;
 
-    public List<AlternativeDto> recalculateWithReveal(Long sessionId, Long versionId, List<AlternativeRevealDto> revealList) {
-        alternativeRepo.deleteBySessionIdAndVersionId(sessionId, versionId);
-
+    public List<AlternativeDto> recalculateWithReveal(List<AlternativeRevealDto> revealList) {
         List<AlternativeDto> recalculated = new ArrayList<>();
-        List<SwotAlternativeEntity> toSave = new ArrayList<>();
         List<SwotFactorEntity> allFactors = factorRepository.findAll();
 
         Map<String, SwotFactorEntity> internalMap = new HashMap<>();
@@ -47,10 +44,13 @@ public class AlternativeCalculationService {
             SwotFactorEntity external = externalMap.get(reveal.getExternal());
             if (internal == null || external == null) continue;
 
-            double dPlusSum = 0, dMinusSum = 0;
+            double dPlusSum = 0;
+            double dMinusSum = 0;
+
             for (double alpha : ALPHA_LEVELS) {
                 double x = alphaCutMassCenter(internal, alpha) * reveal.getInternalPercent() / 100.0;
                 double y = alphaCutMassCenter(external, alpha) * reveal.getExternalPercent() / 100.0;
+
                 double dPlus = Math.sqrt(Math.pow(10 - x, 2) + Math.pow(10 - y, 2));
                 double dMinus = Math.sqrt(Math.pow(-10 - x, 2) + Math.pow(-10 - y, 2));
                 dPlusSum += dPlus;
@@ -60,6 +60,7 @@ public class AlternativeCalculationService {
             double dPlusAvg = dPlusSum / ALPHA_LEVELS.size();
             double dMinusAvg = dMinusSum / ALPHA_LEVELS.size();
             double closenessAvg = dMinusAvg / (dPlusAvg + dMinusAvg);
+
             double internalCenter = trapezoidalMassCenter(internal);
             double externalCenter = trapezoidalMassCenter(external);
             String strategyType = defineStrategy(internal.getType(), external.getType());
@@ -73,26 +74,12 @@ public class AlternativeCalculationService {
             dto.setDMinus(dMinusAvg);
             dto.setCloseness(closenessAvg);
             dto.setStrategyType(strategyType);
-            recalculated.add(dto);
 
-            SwotAlternativeEntity entity = new SwotAlternativeEntity();
-            entity.setSessionId(sessionId);
-            entity.setVersionId(versionId);
-            entity.setInternalFactor(internal.getTitle());
-            entity.setExternalFactor(external.getTitle());
-            entity.setInternalMassCenter(internalCenter);
-            entity.setExternalMassCenter(externalCenter);
-            entity.setDPlus(dPlusAvg);
-            entity.setDMinus(dMinusAvg);
-            entity.setCloseness(closenessAvg);
-            entity.setStrategyType(strategyType);
-            toSave.add(entity);
+            recalculated.add(dto);
         }
 
-        alternativeRepo.saveAll(toSave);
         return recalculated;
     }
-
 
     public double trapezoidalMassCenter(SwotFactorEntity factor) {
         double a = factor.getWeightMin();

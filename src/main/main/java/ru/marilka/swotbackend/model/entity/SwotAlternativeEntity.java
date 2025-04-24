@@ -6,32 +6,21 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "swot_alternative")
-@Getter
 @Setter
+@Getter
 public class SwotAlternativeEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private String internalFactor;
-
-    @Column(nullable = false)
-    private String externalFactor;
-
-    private double internalMassCenter;
-    private double externalMassCenter;
-    private double dPlus;
     private double dMinus;
-    private double closeness;
-
-    private String strategyType;
-
-    @Column(nullable = false)
-    private Long sessionId;
-
+    private double dPlus;
+    private double dStar;
+    private String oneFactor;
+    private double percentageOneFactor;
+    private String twoFactor;
+    private double percentageTwoFactor;
     @Column(nullable = false)
     private Long versionId;
+    @Column(nullable = false)
+    private Long sessionId;
 }
-

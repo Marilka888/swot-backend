@@ -18,6 +18,4 @@ public interface FactorRepository extends JpaRepository<SwotFactorEntity, Long> 
 
     List<SwotFactorEntity> findAllBySessionIdAndVersionIdAndType(Long sessionId, Long versionId, String type);
 
-    List<SwotFactorEntity> findBySessionIdAndVersionId(Long sessionId, Long versionId);
-
 }

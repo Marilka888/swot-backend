@@ -8,7 +8,6 @@ import ru.marilka.swotbackend.model.AlternativeDto;
 import ru.marilka.swotbackend.model.AlternativeResultDto;
 import ru.marilka.swotbackend.model.AlternativeRevealDto;
 import ru.marilka.swotbackend.model.RevealDto;
-import ru.marilka.swotbackend.model.request.RecalculateRequest;
 import ru.marilka.swotbackend.service.AlternativeCalculationService;
 
 import java.util.List;
@@ -23,12 +22,9 @@ public class RecalculationController {
 
 
     @PostMapping("/recalculate")
-    public ResponseEntity<List<AlternativeDto>> recalculate(@RequestBody RecalculateRequest request) {
-        List<AlternativeDto> result = calculationService.recalculateWithReveal(
-                request.sessionId(), request.versionId(), request.revealList()
-        );
-        return ResponseEntity.ok(result);
+    public ResponseEntity<List<AlternativeDto>> recalculate(@RequestBody List<AlternativeRevealDto> revealData) {
+        List<AlternativeDto> recalculated = calculationService.recalculateWithReveal(revealData);
+        return ResponseEntity.ok(recalculated);
     }
-
 }
 
