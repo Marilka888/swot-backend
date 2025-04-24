@@ -3,10 +3,13 @@ package ru.marilka.swotbackend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.marilka.swotbackend.model.request.CreateSessionRequest;
 import ru.marilka.swotbackend.model.dto.SessionDto;
 import ru.marilka.swotbackend.model.entity.SessionEntity;
+import ru.marilka.swotbackend.model.entity.SwotUserSession;
 import ru.marilka.swotbackend.repository.AppUserRepository;
 import ru.marilka.swotbackend.repository.SessionRepository;
+import ru.marilka.swotbackend.repository.UserSessionRepository;
 import ru.marilka.swotbackend.service.SessionService;
 
 import java.time.LocalDateTime;
@@ -20,7 +23,7 @@ public class SessionController {
 
     private final SessionService sessionService;
     private final SessionRepository sessionRepository;
-    private final AppUserRepository userRepository;
+    private final UserSessionRepository userSessionRepository;
 
     @GetMapping
     public ResponseEntity<Object> getUserSessions() {
@@ -39,20 +42,33 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.create(name, userId));
     }
 
-    @PostMapping("create")
-    public ResponseEntity<Void> create(@RequestBody SessionDto dto) {
-
-        SessionEntity session = new SessionEntity();
-        session.setName(dto.getName());
-        session.setAdminId(dto.getAdmin());
-        session.setNotes(dto.getNotes());
-        session.setAlternativeDifference(dto.getAlternativeDifference());
-        session.setTrapezoidDifference(dto.getTrapezoidDifference());
+    @PostMapping("/create")
+    public ResponseEntity<?> createSession(@RequestBody CreateSessionRequest request) {
+        var session = new SessionEntity(); // инициализация
+        session.setName(request.name());
+        session.setAdminId(Long.valueOf(request.admin()));
+        session.setNotes(request.notes());
+        session.setAlternativeDifference(request.alternativeDifference());
+        session.setTrapezoidDifference(request.trapezoidDifference());
         session.setCreatedAt(LocalDateTime.now());
         session.setLastModified(LocalDateTime.now());
         session.setCompleted(false);
-        sessionRepository.save(session);
-        return ResponseEntity.ok().build();
+
+        session = sessionRepository.save(session);
+
+        if (request.participants() != null) {
+            for (var p : request.participants()) {
+                var sus = new SwotUserSession();
+                sus.setSessionId(session.getId());
+                sus.setUserId(p.userId());
+                sus.setUserCoefficient(p.coefficient());
+                userSessionRepository.save(sus);
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "sessionId", session.getId()
+        ));
     }
 }
 

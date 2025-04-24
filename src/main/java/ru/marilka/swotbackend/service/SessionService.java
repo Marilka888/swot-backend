@@ -39,7 +39,7 @@ public class SessionService {
     }
 
     public Optional<SessionEntity> getSession(Long id) {
-        return sessionRepository.findById(1L);
+        return sessionRepository.findById(id);
     }
 
     public List<SessionEntity> getUserSessions() {
