@@ -25,7 +25,9 @@ public class AlternativeCalculationService {
     private final FactorRepository factorRepository;
 
     public List<AlternativeDto> recalculateWithReveal(Long sessionId, Long versionId, List<AlternativeRevealDto> revealList) {
-        alternativeRepo.deleteBySessionIdAndVersionId(sessionId, versionId);
+        revealList.forEach(a -> {
+            alternativeRepo.deleteBySessionIdAndVersionIdAndInternalFactorAndExternalFactor(sessionId, versionId, a.getInternal(), a.getExternal());
+        });
 
         List<AlternativeDto> recalculated = new ArrayList<>();
         List<SwotAlternativeEntity> toSave = new ArrayList<>();
@@ -90,7 +92,20 @@ public class AlternativeCalculationService {
         }
 
         alternativeRepo.saveAll(toSave);
-        return recalculated;
+        return alternativeRepo.findBySessionIdAndVersionId(sessionId, versionId).stream()
+                .map(dto -> {
+                    AlternativeDto dto1 = new AlternativeDto();
+                    dto1.setInternalFactor(dto.getInternalFactor());
+                    dto1.setExternalFactor(dto.getExternalFactor());
+                    dto1.setInternalMassCenter(dto.getInternalMassCenter());
+                    dto1.setExternalMassCenter(dto.getExternalMassCenter());
+                    dto1.setDPlus(dto.getDPlus());
+                    dto1.setDMinus(dto.getDMinus());
+                    dto1.setCloseness(dto.getCloseness());
+                    dto1.setStrategyType(dto.getStrategyType());
+                    return dto1;
+                })
+                .toList();
     }
 
 
@@ -102,6 +117,7 @@ public class AlternativeCalculationService {
 
         return (a + 2 * b + 2 * c + d) / 6.0;
     }
+
     public double alphaCutMassCenter(SwotFactorEntity factor, double alpha) {
         double a = factor.getWeightMin();
         double b = factor.getWeightMax();
@@ -154,7 +170,8 @@ public class AlternativeCalculationService {
 
         return results;
     }
-// todo
+
+    // todo
     // пример: возвращает вес фактора (замени на работу с базой или fuzzy-логикой)
     private double getFactorValue(String factorCode) {
         // TODO: можно загрузить значения из базы или кэш

@@ -3,9 +3,11 @@ package ru.marilka.swotbackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.dto.SensitivityResultDto;
+import ru.marilka.swotbackend.model.entity.SensitivityResultEntity;
 import ru.marilka.swotbackend.model.entity.SessionEntity;
 import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
+import ru.marilka.swotbackend.repository.SensitivityResultRepository;
 import ru.marilka.swotbackend.repository.SessionRepository;
 
 import java.util.ArrayList;
@@ -20,7 +22,22 @@ public class SensitivityAnalysisService {
     private final AlternativeService alternativeService;
     private final FactorService factorService;
     private final SessionRepository sessionRepository;
+    private final SensitivityResultRepository sensitivityResultRepository;
 
+    public void saveSensitivityResults(Long sessionId, Long versionId, List<SensitivityResultDto> results) {
+        List<SensitivityResultEntity> entities = results.stream()
+                .map(dto -> SensitivityResultEntity.builder()
+                        .sessionId(sessionId)
+                        .versionId(versionId)
+                        .alt1(dto.getInternalFactor1() + "+" + dto.getExternalFactor1())
+                        .alt2(dto.getInternalFactor2() + "+" + dto.getExternalFactor2())
+                        .lesser(dto.getLesser())
+                        .greater(dto.getGreater())
+                        .equal(dto.getEqual())
+                        .build())
+                .collect(Collectors.toList());
+        sensitivityResultRepository.saveAll(entities);
+    }
     public List<SensitivityResultDto> analyze(Long sessionId, Long versionId) {
         double threshold = 0.01; // сравнение d*
         double delta = sessionRepository.findById(sessionId).orElseThrow().getTrapezoidDifference();
@@ -73,7 +90,6 @@ public class SensitivityAnalysisService {
                             .externalFactor1(alt1.getExternalFactor())
                             .internalFactor2(alt2.getInternalFactor())
                             .externalFactor2(alt2.getExternalFactor())
-                            .comparison(equal > greater && equal > lesser ? 0 : (greater > lesser ? 1 : -1))
                             .description("A" + (i + 1) + "(" + alt1.getExternalFactor() + " и " + alt1.getInternalFactor()
                                     + ") vs A" + (j + 1) + "(" + alt2.getExternalFactor() + " и " + alt2.getInternalFactor()+ ")"
                                     + " альтернативы равны в " + equal + " случаях, "

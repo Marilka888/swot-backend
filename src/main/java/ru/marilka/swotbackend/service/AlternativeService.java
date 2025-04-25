@@ -19,6 +19,11 @@ public class AlternativeService {
 
     private static final List<Double> ALPHA_LEVELS = List.of(0.1, 0.5, 0.9);
 
+    public void replaceAlternatives(Long sessionId, Long versionId, List<SwotAlternativeEntity> newList) {
+        alternativeRepository.deleteBySessionIdAndVersionId(sessionId, versionId);
+        alternativeRepository.saveAll(newList);
+    }
+
     public List<AlternativeDto> calculateSelectedAlternatives(List<Long> selectedIds) {
         List<SwotFactorEntity> selectedFactors = factorRepository.findAllById(selectedIds);
 

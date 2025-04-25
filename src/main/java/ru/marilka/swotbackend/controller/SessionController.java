@@ -3,24 +3,33 @@ package ru.marilka.swotbackend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.marilka.swotbackend.model.request.CreateSessionRequest;
-import ru.marilka.swotbackend.model.dto.SessionDto;
+import ru.marilka.swotbackend.model.dto.RecalculateRequest;
+import ru.marilka.swotbackend.model.dto.SensitivitySaveRequest;
+import ru.marilka.swotbackend.model.dto.SessionResultsResponse;
 import ru.marilka.swotbackend.model.entity.SessionEntity;
+import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
+import ru.marilka.swotbackend.model.entity.SensitivityResultEntity;
 import ru.marilka.swotbackend.model.entity.SwotUserSession;
-import ru.marilka.swotbackend.repository.AppUserRepository;
+import ru.marilka.swotbackend.model.request.CreateSessionRequest;
+import ru.marilka.swotbackend.repository.SensitivityResultRepository;
 import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.UserSessionRepository;
+import ru.marilka.swotbackend.service.AlternativeService;
+import ru.marilka.swotbackend.service.SensitivityAnalysisService;
 import ru.marilka.swotbackend.service.SessionService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/v1/sessions")
-@CrossOrigin
 @RequiredArgsConstructor
 public class SessionController {
 
+    private final AlternativeService alternativeService;
+    private final SensitivityAnalysisService sensitivityService;
+    private final SensitivityResultRepository sensitivityRepo;
     private final SessionService sessionService;
     private final SessionRepository sessionRepository;
     private final UserSessionRepository userSessionRepository;
@@ -41,7 +50,24 @@ public class SessionController {
         String userId = payload.get("userId");
         return ResponseEntity.ok(sessionService.create(name, userId));
     }
+    @PostMapping("/recalculate/save")
+    public ResponseEntity<Void> recalculateAndSave(@RequestBody RecalculateRequest request) {
+        alternativeService.replaceAlternatives(request.getSessionId(), request.getVersionId(), request.getAlternatives());
+        return ResponseEntity.ok().build();
+    }
 
+    @PostMapping("/sensitivity-analysis/save")
+    public ResponseEntity<Void> saveSensitivity(@RequestBody SensitivitySaveRequest request) {
+        sensitivityService.saveSensitivityResults(request.getSessionId(), request.getVersionId(), request.getResults());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/results/{sessionId}")
+    public ResponseEntity<SessionResultsResponse> getResults(@PathVariable Long sessionId, @RequestParam Long versionId) {
+        List<SwotAlternativeEntity> alternatives = alternativeService.getBySessionAndVersion(sessionId, versionId);
+        List<SensitivityResultEntity> sensitivity = sensitivityRepo.findBySessionIdAndVersionId(sessionId, versionId);
+        return ResponseEntity.ok(new SessionResultsResponse(alternatives, sensitivity));
+    }
     @PostMapping("/create")
     public ResponseEntity<?> createSession(@RequestBody CreateSessionRequest request) {
         var session = new SessionEntity(); // инициализация
@@ -71,4 +97,3 @@ public class SessionController {
         ));
     }
 }
-

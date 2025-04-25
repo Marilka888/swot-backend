@@ -11,6 +11,7 @@ public interface AlternativeRepository extends JpaRepository<SwotAlternativeEnti
     List<SwotAlternativeEntity> findAllBySessionIdAndVersionId(Long sessionId, Long versionId);
 
     void deleteBySessionIdAndVersionId(Long sessionId, Long versionId);
+    void deleteBySessionIdAndVersionIdAndInternalFactorAndExternalFactor(Long sessionId, Long versionId, String internal, String external);
 
     List<SwotAlternativeEntity> findBySessionIdAndVersionId(Long sessionId, Long versionId);
 
