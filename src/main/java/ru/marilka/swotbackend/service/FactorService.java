@@ -9,6 +9,7 @@ import ru.marilka.swotbackend.model.Range;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
 import ru.marilka.swotbackend.repository.FactorRepository;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -124,5 +125,9 @@ public class FactorService {
 
     private static double safe(Double value, double fallback) {
         return value != null && !Double.isNaN(value) ? value : fallback;
+    }
+
+    public Collection<SwotFactorEntity> getAllBySessionAndVersion(Long sessionId, Long versionId) {
+        return factorRepository.findBySessionIdAndVersionId(sessionId, versionId);
     }
 }

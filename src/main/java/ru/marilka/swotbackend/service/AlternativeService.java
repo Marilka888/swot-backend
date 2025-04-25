@@ -208,4 +208,8 @@ public class AlternativeService {
                 .closeness(entity.getCloseness())
                 .build();
     }
+
+    public List<SwotAlternativeEntity> getBySessionAndVersion(Long sessionId, Long versionId) {
+        return alternativeRepository.findAllBySessionIdAndVersionId(sessionId, versionId);
+    }
 }
