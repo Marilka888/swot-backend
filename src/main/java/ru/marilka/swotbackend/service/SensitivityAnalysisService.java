@@ -3,12 +3,15 @@ package ru.marilka.swotbackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.dto.SensitivityResultDto;
+import ru.marilka.swotbackend.model.entity.SessionEntity;
 import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
+import ru.marilka.swotbackend.repository.SessionRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,10 +19,11 @@ import java.util.stream.Collectors;
 public class SensitivityAnalysisService {
     private final AlternativeService alternativeService;
     private final FactorService factorService;
+    private final SessionRepository sessionRepository;
 
-    public List<SensitivityResultDto> analyze(Long sessionId, Long versionId, double delta) {
+    public List<SensitivityResultDto> analyze(Long sessionId, Long versionId) {
         double threshold = 0.01; // сравнение d*
-
+        double delta = sessionRepository.findById(sessionId).orElseThrow().getTrapezoidDifference();
         List<SwotAlternativeEntity> alternatives = alternativeService.getBySessionAndVersion(sessionId, versionId);
         Map<String, SwotFactorEntity> allFactors = factorService.getAllBySessionAndVersion(sessionId, versionId).stream()
                 .collect(Collectors.toMap(SwotFactorEntity::getTitle, f -> f));

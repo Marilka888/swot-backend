@@ -21,9 +21,7 @@ public class SensitivityAnalysisController {
     public ResponseEntity<List<SensitivityResultDto>> performSensitivityAnalysis(
             @RequestBody SensitivityAnalysisRequest request
     ) {
-        List<SensitivityResultDto> result = sensitivityAnalysisService.analyze(request.getSessionId(), request.getVersionId(),
-                request.getTrapezoidDifference()
-        );
+        List<SensitivityResultDto> result = sensitivityAnalysisService.analyze(request.getSessionId(), request.getVersionId());
         return ResponseEntity.ok(result);
     }
 }

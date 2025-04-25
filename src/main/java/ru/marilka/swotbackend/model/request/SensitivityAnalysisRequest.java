@@ -6,5 +6,4 @@ import lombok.Data;
 public class SensitivityAnalysisRequest {
     private Long sessionId;
     private Long versionId;
-    private double trapezoidDifference;
 }
