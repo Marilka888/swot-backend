@@ -19,6 +19,7 @@ import ru.marilka.swotbackend.service.SessionService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v1/sessions")
@@ -106,15 +107,16 @@ public class SessionController {
         session.setCompleted(false);
 
         session = sessionRepository.save(session);
+        int totalInput = request.participants().stream().mapToInt(ru.marilka.swotbackend.model.request.ParticipantDto::coefficient).sum();
+        int participantCount = request.participants().size();
 
-        if (request.participants() != null) {
-            for (var p : request.participants()) {
-                var sus = new SwotUserSession();
-                sus.setSessionId(session.getId());
-                sus.setUserId(p.userId());
-                sus.setUserCoefficient(p.coefficient());
-                userSessionRepository.save(sus);
-            }
+        for (var p : request.participants()) {
+            var sus = new SwotUserSession();
+            sus.setSessionId(session.getId());
+            sus.setUserId(p.userId());
+            // Нормализация
+            sus.setUserCoefficient((double) (p.coefficient() * participantCount) / totalInput);
+            userSessionRepository.save(sus);
         }
 
         return ResponseEntity.ok(Map.of(
