@@ -18,10 +18,13 @@ public class SensitivityAnalysisController {
     private final SensitivityAnalysisService sensitivityAnalysisService;
 
     @PostMapping("/sensitivity-analysis")
-    public ResponseEntity<List<SensitivityResultDto>> performSensitivityAnalysis(
-            @RequestBody SensitivityAnalysisRequest request
-    ) {
-        List<SensitivityResultDto> result = sensitivityAnalysisService.analyze(request.getSessionId(), request.getVersionId());
+    public ResponseEntity<?> runSensitivityAnalysis(@RequestBody SensitivityAnalysisRequest request) {
+        var result = sensitivityAnalysisService.runDetailedAnalysis(
+                request.getSessionId(),
+                request.getVersionId(),
+                request.getDelta(),
+                request.getFactorDistance()
+        );
         return ResponseEntity.ok(result);
     }
 }
