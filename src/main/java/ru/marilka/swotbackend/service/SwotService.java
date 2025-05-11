@@ -2,6 +2,7 @@ package ru.marilka.swotbackend.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.SwotSummaryDto;
@@ -47,6 +48,7 @@ public class SwotService {
         versionRepository.save(version);
     }
 
+@Transactional
     public List<SwotVersionEntity> getVersions(Long sessionId) {
         return versionRepository.findBySessionIdOrderByCreatedAtDesc(sessionId);
     }

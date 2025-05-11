@@ -55,6 +55,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    /**
+     * Аутентификация.
+     */
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
@@ -72,7 +75,6 @@ public class AuthController {
 
         String token = jwt.generateToken(user.getUsername());
         user.setToken(token);
-        user.setReg(true);
         userRepo.save(user);
 
         return ResponseEntity.ok(Map.of(

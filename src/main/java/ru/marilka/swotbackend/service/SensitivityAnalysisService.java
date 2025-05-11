@@ -1,21 +1,32 @@
 package ru.marilka.swotbackend.service;
 
+import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.dto.SensitivityComparisonDto;
 import ru.marilka.swotbackend.model.dto.SensitivityResultDto;
-import ru.marilka.swotbackend.model.entity.SensitivityResultEntity;
-import ru.marilka.swotbackend.model.entity.SessionEntity;
 import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
 import ru.marilka.swotbackend.repository.FactorRepository;
 import ru.marilka.swotbackend.repository.SensitivityResultRepository;
 import ru.marilka.swotbackend.repository.SessionRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,11 +38,79 @@ public class SensitivityAnalysisService {
     private final SensitivityResultRepository sensitivityResultRepository;
     private final FactorRepository factorRepository;
 
+    public byte[] exportSensitivityAnalysis(String sessionName, List<SensitivityComparisonDto> results) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document doc = new Document(pdf);
+
+        PdfFont font = PdfFontFactory.createFont("C:\\Users\\Admin\\IdeaProjects\\swot-backend\\src\\main\\resources\\fonts\\Roboto-Italic-VariableFont_wdth,wght.ttf", PdfEncodings.IDENTITY_H);
+        doc.setFont(font);
+
+        doc.add(new Paragraph("Анализ чувствительности " + sessionName)
+                .setFontSize(18)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER));
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{4, 1, 1, 1}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        table.addHeaderCell("Сравнение альтернатив");
+        table.addHeaderCell("Левая приоритетнее");
+        table.addHeaderCell("Одинаковы");
+        table.addHeaderCell("Правая приоритетнее");
+
+        for (SensitivityComparisonDto result : results) {
+            String alt1 = result.alt1().getExternalFactor() + " и " + result.alt1().getInternalFactor();
+            String alt2 = result.alt2().getExternalFactor() + " и " + result.alt2().getInternalFactor();
+            String comparison = alt1 + "\nvs\n" + alt2;
+
+            table.addCell(new Cell().add(new Paragraph(comparison).setTextAlignment(TextAlignment.CENTER)));
+            table.addCell(String.valueOf(result.lesser()));
+            table.addCell(String.valueOf(result.equal()));
+            table.addCell(String.valueOf(result.greater()));
+        }
+
+        doc.add(table);
+        doc.close();
+        return baos.toByteArray();
+    }
+
+    private Cell createHeaderCell(String text) {
+        return new Cell()
+                .add(new Paragraph(text).setBold())
+                .setBackgroundColor(ColorConstants.LIGHT_GRAY)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setBorder(new SolidBorder(1));
+    }
+
+    private Cell createBodyCell(String text) {
+        return new Cell()
+                .add(new Paragraph(text))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setBorder(new SolidBorder(0.5f));
+    }
+
+
     public List<SensitivityComparisonDto> runDetailedAnalysis(Long sessionId, Long versionId, Double delta, Double factorDistance) {
         List<SwotAlternativeEntity> alternatives = alternativeService.getBySessionAndVersion(sessionId, versionId);
         List<SwotFactorEntity> allFactors = factorRepository.findBySessionIdAndVersionId(sessionId, versionId);
 
+        List<SwotAlternativeEntity> sorted = alternatives.stream()
+                .sorted(Comparator.comparing(SwotAlternativeEntity::getCloseness).reversed())
+                .toList();
+
+        for (int i = 0; i < alternatives.size(); i++) {
+            int finalI = i;
+            sorted.forEach(a ->
+                    alternatives.get(finalI).setPrioritization((long) finalI + 1));
+        }
+
         List<SensitivityComparisonDto> results = new ArrayList<>();
+
+        Random random = new Random(Objects.hash(sessionId, versionId, delta, factorDistance));
 
         for (int i = 0; i < alternatives.size(); i++) {
             for (int j = i + 1; j < alternatives.size(); j++) {
@@ -42,27 +121,28 @@ public class SensitivityAnalysisService {
                 double originalD2 = alt2.getCloseness();
                 double closenessDiff = Math.abs(originalD1 - originalD2);
 
-                if (delta != null && closenessDiff > delta) {
+                if (delta != null && closenessDiff > delta + 1e-6) {
                     continue;
                 }
 
                 int equal = 0;
                 int lesser = 0;
                 int greater = 0;
+                double maxLesserRejection = 0;
+                double maxGreaterRejection = 0;
 
-                for (int k = 0; k < 20; k++) {
-                    // Генерация сдвинутых mass-центров из трапеций
+                for (int k = 0; k < 70; k++) {
                     Map<String, Double> adjustedCenters = allFactors.stream()
                             .collect(Collectors.toMap(
-                                    SwotFactorEntity::getTitle,  // ключ - название фактора
+                                    SwotFactorEntity::getTitle,
                                     f -> {
-                                        double min = shift(f.getWeightMin(), factorDistance);
-                                        double avg1 = shift(f.getWeightAvg1(), factorDistance);
-                                        double avg2 = shift(f.getWeightAvg2(), factorDistance);
-                                        double max = shift(f.getWeightMax(), factorDistance);
+                                        double min = shift(f.getWeightMin(), factorDistance, random);
+                                        double avg1 = shift(f.getWeightAvg1(), factorDistance, random);
+                                        double avg2 = shift(f.getWeightAvg2(), factorDistance, random);
+                                        double max = shift(f.getWeightMax(), factorDistance, random);
                                         return trapezoidalCenter(min, avg1, avg2, max);
                                     },
-                                    (v1, v2) -> v1 // если дубликаты, взять первое (или логика по userId?)
+                                    (v1, v2) -> v1
                             ));
 
                     double d1 = recalculateCloseness(alt1, adjustedCenters);
@@ -72,22 +152,36 @@ public class SensitivityAnalysisService {
                         equal++;
                     } else if (d1 > d2) {
                         lesser++;
+                        maxLesserRejection = Math.max(maxLesserRejection, d1 - d2);
                     } else {
                         greater++;
+                        maxGreaterRejection = Math.max(maxGreaterRejection, d2 - d1);
                     }
                 }
 
-                results.add(new SensitivityComparisonDto(alt1, alt2, equal, lesser, greater));
+                results.add(new SensitivityComparisonDto(
+                        alt1,
+                        alt2,
+                        equal,
+                        lesser,
+                        greater,
+                        maxLesserRejection,
+                        maxGreaterRejection
+                ));
             }
         }
 
         return results;
     }
 
-    private double shift(double value, double distance) {
-        double delta = (Math.random() * distance * 2) - distance;
-        double shifted = value + delta;
-        return Math.max(0.0, Math.min(10.0, shifted)); // ограничить в [0;10]
+
+
+    private double shift(double value, Double factorDistance, Random random) {
+        if (factorDistance == null || factorDistance == 0) {
+            return value;
+        }
+        double shiftFactor = (random.nextDouble() * 2.0 - 1.0) * factorDistance;
+        return value + shiftFactor;
     }
 
     private double trapezoidalCenter(double a, double b, double c, double d) {

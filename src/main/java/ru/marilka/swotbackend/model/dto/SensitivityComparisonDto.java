@@ -7,5 +7,8 @@ public record SensitivityComparisonDto(
         SwotAlternativeEntity alt2,
         int equal,
         int lesser,
-        int greater
+        int greater,
+        double maxLesserRejection,
+        double maxGreaterRejection
+
 ) {}

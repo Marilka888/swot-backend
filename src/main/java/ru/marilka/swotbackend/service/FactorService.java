@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import ru.marilka.swotbackend.model.Factor;
 import ru.marilka.swotbackend.model.Range;
+import ru.marilka.swotbackend.model.dto.FactorDto;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
 import ru.marilka.swotbackend.repository.FactorRepository;
 
@@ -23,6 +24,29 @@ public class FactorService {
 
     public Factor create(Factor request) {
         return getFactor(factorRepository.save(getFactor(request)));
+    }
+
+    public List<FactorDto> getFactorsForSessionAndVersion(Long sessionId, Long versionId) {
+        List<SwotFactorEntity> entities = factorRepository.findBySessionIdAndVersionId(sessionId, versionId);
+
+        return entities.stream()
+                .map(factor -> FactorDto.builder()
+                        .id(factor.getId())
+                        .name(factor.getTitle())
+                        .type(factor.getType())
+                        .massCenter(trapezoidalCenter(
+                                factor.getWeightMin(),
+                                factor.getWeightAvg1(),
+                                factor.getWeightAvg2(),
+                                factor.getWeightMax()
+                        ))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // Формула центра масс трапециевидного числа
+    private double trapezoidalCenter(double min, double avg1, double avg2, double max) {
+        return (min + avg1 + avg2 + max) / 4.0;
     }
 
     public void saveSelectedFactorIds(List<Long> factorIds) {

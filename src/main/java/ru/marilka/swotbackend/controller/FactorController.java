@@ -21,6 +21,9 @@ public class FactorController {
     private final AlternativeService alternativeService;
 
     @GetMapping
+    /**
+     * Получение факторов по начатой версии сессии.
+     */
     public ResponseEntity<List<Factor>> getFactorsBySessionAndVersion(
             @RequestParam("sessionId") Long sessionId,
             @RequestParam("versionId") Long versionId) {

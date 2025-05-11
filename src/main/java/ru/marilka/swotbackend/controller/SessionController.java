@@ -1,10 +1,14 @@
 package ru.marilka.swotbackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.marilka.swotbackend.model.AlternativeDto;
+import ru.marilka.swotbackend.model.Factor;
 import ru.marilka.swotbackend.model.dto.*;
 import ru.marilka.swotbackend.model.entity.*;
 import ru.marilka.swotbackend.model.request.CreateSessionRequest;
@@ -13,12 +17,16 @@ import ru.marilka.swotbackend.repository.SensitivityResultRepository;
 import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.UserSessionRepository;
 import ru.marilka.swotbackend.service.AlternativeService;
+import ru.marilka.swotbackend.service.FactorService;
 import ru.marilka.swotbackend.service.SensitivityAnalysisService;
 import ru.marilka.swotbackend.service.SessionService;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,9 +35,8 @@ import java.util.stream.Collectors;
 public class SessionController {
 
     private final AlternativeService alternativeService;
-    private final SensitivityAnalysisService sensitivityService;
-    private final SensitivityResultRepository sensitivityRepo;
     private final SessionService sessionService;
+    private final FactorService factorService;
     private final SessionRepository sessionRepository;
     private final UserSessionRepository userSessionRepository;
     private final AppUserRepository userRepo;
@@ -39,8 +46,10 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.getUserSessions());
     }
 
-
     @GetMapping("/{sessionId}")
+    /**
+     * Получение жанных по выбранной сессии (+ инфа по версиям)
+     */
     public ResponseEntity<SessionWithParticipantsDto> getSessionWithParticipants(@PathVariable Long sessionId) {
         SessionEntity session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
@@ -70,31 +79,10 @@ public class SessionController {
         return ResponseEntity.ok(dto);
     }
 
-    @PostMapping
-    public ResponseEntity<SessionEntity> createSession(@RequestBody Map<String, String> payload) {
-        String name = payload.get("name");
-        String userId = payload.get("userId");
-        return ResponseEntity.ok(sessionService.create(name, userId));
-    }
-    @PostMapping("/recalculate/save")
-    public ResponseEntity<Void> recalculateAndSave(@RequestBody RecalculateRequest request) {
-        alternativeService.replaceAlternatives(request.getSessionId(), request.getVersionId(), request.getAlternatives());
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/sensitivity-analysis/save")
-    public ResponseEntity<Void> saveSensitivity(@RequestBody SensitivitySaveRequest request) {
-        sensitivityService.saveSensitivityResults(request.getSessionId(), request.getVersionId(), request.getResults());
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/results/{sessionId}")
-    public ResponseEntity<SessionResultsResponse> getResults(@PathVariable Long sessionId, @RequestParam Long versionId) {
-        List<SwotAlternativeEntity> alternatives = alternativeService.getBySessionAndVersion(sessionId, versionId);
-        List<SensitivityResultEntity> sensitivity = sensitivityRepo.findBySessionIdAndVersionId(sessionId, versionId);
-        return ResponseEntity.ok(new SessionResultsResponse(alternatives, sensitivity));
-    }
     @PostMapping("/create")
+    /**
+     * Создание сессии.
+     */
     public ResponseEntity<?> createSession(@RequestBody CreateSessionRequest request) {
         var session = new SessionEntity(); // инициализация
         session.setName(request.name());
@@ -123,4 +111,23 @@ public class SessionController {
                 "sessionId", session.getId()
         ));
     }
+
+    @GetMapping("/results/pdf")
+    public ResponseEntity<byte[]> exportResultsPdf(
+            @RequestParam Long sessionId,
+            @RequestParam Long versionId) throws Exception {
+
+        List<Factor> factors = factorService.getFactors(sessionId, versionId);
+        List<AlternativeDto> alternatives = alternativeService.calculateSelectedAlternatives(sessionId, versionId);
+        var sessionEntity = sessionRepository.findById(sessionId).orElseThrow();
+        String sessionName = "SWOT Сессия " + sessionEntity.getName();
+        byte[] pdf = alternativeService.exportToPdf(sessionName, factors, alternatives);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "swot_results.pdf");
+
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+    }
+
 }

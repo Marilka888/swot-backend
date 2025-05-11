@@ -14,8 +14,6 @@ public class WebSocketController {
 
     @MessageMapping("/factor.add") // из фронта: /app/factor.add
     public void addFactor(FactorMessage message) {
-        // сохранить в базу и т.д.
-        // todo
         messagingTemplate.convertAndSend("/topic/factors/" + message.getSessionId(), message);
     }
 }

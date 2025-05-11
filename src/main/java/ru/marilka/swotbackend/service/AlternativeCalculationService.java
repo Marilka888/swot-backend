@@ -4,12 +4,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.marilka.swotbackend.model.AlternativeDto;
-import ru.marilka.swotbackend.model.AlternativeResultDto;
 import ru.marilka.swotbackend.model.AlternativeRevealDto;
 import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
 import ru.marilka.swotbackend.model.entity.SwotFactorEntity;
 import ru.marilka.swotbackend.repository.AlternativeRepository;
 import ru.marilka.swotbackend.repository.FactorRepository;
+import ru.marilka.swotbackend.repository.UserSessionRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +23,7 @@ public class AlternativeCalculationService {
     private static final List<Double> ALPHA_LEVELS = List.of(0.1, 0.5, 0.9);
     private final AlternativeRepository alternativeRepo;
     private final FactorRepository factorRepository;
+    private final UserSessionRepository userSessionRepository;
 
     public List<AlternativeDto> recalculateWithReveal(Long sessionId, Long versionId, List<AlternativeRevealDto> revealList) {
         revealList.forEach(a -> {
@@ -51,10 +52,19 @@ public class AlternativeCalculationService {
 
             double dPlusSum = 0, dMinusSum = 0;
             for (double alpha : ALPHA_LEVELS) {
-                double x = alphaCutMassCenter(internal, alpha) * reveal.getInternalPercent() / 100.0;
-                double y = alphaCutMassCenter(external, alpha) * reveal.getExternalPercent() / 100.0;
-                double dPlus = Math.sqrt(Math.pow(10 - x, 2) + Math.pow(10 - y, 2));
-                double dMinus = Math.sqrt(Math.pow(-10 - x, 2) + Math.pow(-10 - y, 2));
+                double internalUserCoefficient = userSessionRepository.findSwotUserSessionBySessionIdAndUserId(internal.getSessionId(), internal.getUserId())
+                        .get()
+                        .getUserCoefficient();
+                double externalUserCoefficient = userSessionRepository.findSwotUserSessionBySessionIdAndUserId(external.getSessionId(), external.getUserId())
+                        .get()
+                        .getUserCoefficient();
+
+                double x = alphaCutMassCenter(internal, alpha) * internalUserCoefficient * reveal.getInternalPercent() / 100.0;
+                double y = alphaCutMassCenter(external, alpha) * externalUserCoefficient * reveal.getExternalPercent() / 100.0;
+
+                double dPlus = Math.sqrt(Math.pow(1 - x, 2) + Math.pow(1 - y, 2));
+                double dMinus = Math.sqrt(x * x + y * y);
+
                 dPlusSum += dPlus;
                 dMinusSum += dMinus;
             }
@@ -147,31 +157,6 @@ public class AlternativeCalculationService {
         }
     }
 
-
-    public List<AlternativeResultDto> recalculateAlternatives(List<AlternativeRevealDto> reveals) {
-        List<AlternativeResultDto> results = new ArrayList<>();
-
-        for (AlternativeRevealDto reveal : reveals) {
-            double internalValue = getFactorValue(reveal.getInternal()) * reveal.getInternalPercent() / 100.0;
-            double externalValue = getFactorValue(reveal.getExternal()) * reveal.getExternalPercent() / 100.0;
-
-            double dplus = Math.max(internalValue, externalValue);
-            double dminus = Math.min(internalValue, externalValue);
-            double closeness = dplus == 0 ? 0 : dminus / (dplus + dminus);
-
-            results.add(new AlternativeResultDto(
-                    reveal.getInternal(),
-                    reveal.getExternal(),
-                    round(dplus),
-                    round(dminus),
-                    round(closeness)
-            ));
-        }
-
-        return results;
-    }
-
-    // todo
     // пример: возвращает вес фактора (замени на работу с базой или fuzzy-логикой)
     private double getFactorValue(String factorCode) {
         // TODO: можно загрузить значения из базы или кэш
@@ -184,8 +169,5 @@ public class AlternativeCalculationService {
         };
     }
 
-    private double round(double val) {
-        return Math.round(val * 1000.0) / 1000.0;
-    }
 }
 

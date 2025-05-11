@@ -35,5 +35,7 @@ public class SwotAlternativeEntity {
 
     @Column(nullable = false)
     private Long versionId;
+
+    private Long prioritization;
 }
 

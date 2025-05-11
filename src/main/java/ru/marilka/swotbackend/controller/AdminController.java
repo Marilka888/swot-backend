@@ -44,11 +44,15 @@ public class AdminController {
         user.setUsername(username);
         user.setPassword(encoder.encode(rawPassword));
         user.setRole(role);
+        user.setReg(false);
 
         return ResponseEntity.ok(userRepo.save(user));
     }
 
     @GetMapping("/users")
+    /**
+     * Получение всех пользователей (сразу забираем данные до перехода на вкладку).
+     */
     public ResponseEntity<List<AppUser>> getAllUsers() {
         return ResponseEntity.ok(userRepo.findAll());
     }
@@ -106,6 +110,4 @@ public class AdminController {
         }
         return sb.toString();
     }
-
-
 }
