@@ -1,16 +1,14 @@
 package ru.marilka.swotbackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.marilka.swotbackend.model.dto.RecalculateRequest;
-import ru.marilka.swotbackend.model.dto.SensitivitySaveRequest;
-import ru.marilka.swotbackend.model.dto.SessionResultsResponse;
-import ru.marilka.swotbackend.model.entity.SessionEntity;
-import ru.marilka.swotbackend.model.entity.SwotAlternativeEntity;
-import ru.marilka.swotbackend.model.entity.SensitivityResultEntity;
-import ru.marilka.swotbackend.model.entity.SwotUserSession;
+import org.springframework.web.server.ResponseStatusException;
+import ru.marilka.swotbackend.model.dto.*;
+import ru.marilka.swotbackend.model.entity.*;
 import ru.marilka.swotbackend.model.request.CreateSessionRequest;
+import ru.marilka.swotbackend.repository.AppUserRepository;
 import ru.marilka.swotbackend.repository.SensitivityResultRepository;
 import ru.marilka.swotbackend.repository.SessionRepository;
 import ru.marilka.swotbackend.repository.UserSessionRepository;
@@ -33,15 +31,42 @@ public class SessionController {
     private final SessionService sessionService;
     private final SessionRepository sessionRepository;
     private final UserSessionRepository userSessionRepository;
+    private final AppUserRepository userRepo;
 
     @GetMapping
     public ResponseEntity<Object> getUserSessions() {
         return ResponseEntity.ok(sessionService.getUserSessions());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getSession(@PathVariable String id) {
-        return ResponseEntity.ok(sessionService.getSession(Long.valueOf(id)).orElseThrow());
+
+    @GetMapping("/{sessionId}")
+    public ResponseEntity<SessionWithParticipantsDto> getSessionWithParticipants(@PathVariable Long sessionId) {
+        SessionEntity session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+
+        List<SwotUserSession> links = userSessionRepository.findBySessionId(sessionId);
+
+        List<ParticipantDto> participants = links.stream()
+                .map(link -> {
+                    AppUser user = userRepo.findById(link.getUserId()).orElseThrow();
+                    return ParticipantDto.builder()
+                            .id(user.getId())
+                            .fullName(user.getFullName())
+                            .role(user.getRole())
+                            .build();
+                })
+                .toList();
+
+        SessionWithParticipantsDto dto = SessionWithParticipantsDto.builder()
+                .id(session.getId())
+                .name(session.getName())
+                .notes(session.getNotes())
+                .alternativeDifference(session.getAlternativeDifference())
+                .trapezoidDifference(session.getTrapezoidDifference())
+                .participants(participants)
+                .build();
+
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping
