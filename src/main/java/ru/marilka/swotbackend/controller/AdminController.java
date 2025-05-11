@@ -12,7 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.marilka.swotbackend.model.entity.AppUser;
 import ru.marilka.swotbackend.model.request.UserRequest;
 import ru.marilka.swotbackend.repository.AppUserRepository;
+import ru.marilka.swotbackend.service.EmailService;
 
+import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,7 @@ public class AdminController {
 
     private final AppUserRepository userRepo;
     private final PasswordEncoder encoder;
+    private final EmailService emailService;
 
     @PostMapping("/users")
     public ResponseEntity<AppUser> createUser(@RequestBody Map<String, Object> body) {
@@ -66,15 +69,17 @@ public class AdminController {
         if (userRepo.findByUsername(request.getUsername()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Пользователь с таким логином уже существует");
         }
-
+        String generatedPassword = passwordGenerator();
         AppUser user = new AppUser();
         user.setUsername(request.getUsername());
-        user.setPassword(encoder.encode("default123")); // или сгенерировать, или присылать
+        user.setPassword(encoder.encode(generatedPassword));
         user.setRole(request.getRole());
         user.setFullName(request.getName());
         user.setCompanyId(appUser.getCompanyId());
 
         userRepo.save(user);
+        // Отправка пароля на email
+        emailService.sendPasswordToUser(user.getUsername(), generatedPassword);
         return ResponseEntity.ok("Пользователь создан");
     }
 
@@ -88,5 +93,17 @@ public class AdminController {
         userRepo.save(user);
         return ResponseEntity.ok("Пользователь обновлён");
     }
+
+    private String passwordGenerator() {
+        int length = 10;
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
 
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.marilka.swotbackend.model.entity.AppUser;
 import ru.marilka.swotbackend.model.entity.CompanyEntity;
+import ru.marilka.swotbackend.model.request.ChangePasswordRequest;
 import ru.marilka.swotbackend.model.request.UserRequest;
 import ru.marilka.swotbackend.model.response.UserResponse;
 import ru.marilka.swotbackend.repository.AppUserRepository;
@@ -55,7 +56,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        System.out.println(encoder.encode("1111"));
         String username = request.get("username");
         String password = request.get("password");
 
@@ -78,9 +78,23 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "token", token,
                 "username", user.getUsername(),
-                "role", user.getRole()
+                "role", user.getRole(),
+                "firstLogin", !user.isReg()
         ));
     }
+
+    @PostMapping("/api/auth/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest req) {
+        var principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var user = userRepo.findByUsername(principal.getUsername()).orElseThrow();
+
+        user.setPassword(encoder.encode(req.getNewPassword()));
+        user.setReg(true); // снимаем флаг
+        userRepo.save(user);
+
+        return ResponseEntity.ok("Пароль успешно изменён");
+    }
+
 
     @GetMapping("/profile")
     public ResponseEntity<Object> getProfile() {
