@@ -53,13 +53,6 @@ public class AdminController {
         return ResponseEntity.ok(userRepo.findAll());
     }
 
-    @DeleteMapping("/users/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userRepo.deleteById(id);
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserRequest request) {
         var principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -83,6 +76,15 @@ public class AdminController {
         return ResponseEntity.ok("Пользователь создан");
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        if (!userRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        userRepo.deleteById(id);
+        return ResponseEntity.ok().body("Пользователь удалён");
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequest request) {

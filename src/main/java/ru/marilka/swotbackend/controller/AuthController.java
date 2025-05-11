@@ -83,7 +83,7 @@ public class AuthController {
         ));
     }
 
-    @PostMapping("/api/auth/change-password")
+    @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest req) {
         var principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var user = userRepo.findByUsername(principal.getUsername()).orElseThrow();
@@ -92,7 +92,7 @@ public class AuthController {
         user.setReg(true); // снимаем флаг
         userRepo.save(user);
 
-        return ResponseEntity.ok("Пароль успешно изменён");
+        return ResponseEntity.ok("");
     }
 
 
